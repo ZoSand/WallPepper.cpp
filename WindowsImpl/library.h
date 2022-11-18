@@ -1,0 +1,6 @@
+#ifndef WINDOWSIMPL_LIBRARY_H
+#define WINDOWSIMPL_LIBRARY_H
+
+void hello();
+
+#endif //WINDOWSIMPL_LIBRARY_H
