@@ -11,6 +11,8 @@ include_directories(${CMAKE_SOURCE_DIR}/Shared) # include files from libraries
 target_link_libraries(WindowsImpl Shared)
 target_compile_definitions(WindowsImpl PRIVATE WIN_EXPORT)
 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/Build")
+
 install(TARGETS WindowsImpl
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib)
