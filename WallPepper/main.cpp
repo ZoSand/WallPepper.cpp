@@ -1,6 +1,8 @@
 #include <iostream>
 
+#include "../WindowsImpl/Wallpaper.h"
+
 int main() {
-    std::cout << "Hello, World!" << std::endl;
+    Pepper::Impl::Wallpaper wp;
     return 0;
 }

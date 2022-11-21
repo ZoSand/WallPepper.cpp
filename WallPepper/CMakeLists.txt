@@ -5,8 +5,8 @@ set(CMAKE_CXX_STANDARD 20)
 
 add_executable(WallPepper main.cpp)
 
-include_directories(${CMAKE_SOURCE_DIR}/WindowImpl) # include files from libraries
-#target_link_libraries(WallPepper WindowImpl)
+include_directories(${CMAKE_SOURCE_DIR}/WindowsImpl) # include files from libraries
+target_link_libraries(WallPepper WindowsImpl)
 
-#install(TARGETS WallPepper
-#        RUNTIME DESTINATION bin)
+install(TARGETS WallPepper
+        RUNTIME DESTINATION bin)
