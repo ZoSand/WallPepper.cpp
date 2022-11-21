@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.24 FATAL_ERROR)
-project(GlobalWallPepper)
+project(WallPepperGlobal)
 
 set(CMAKE_CXX_STANDARD 20)
 
