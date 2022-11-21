@@ -4,28 +4,28 @@
 #include <stdexcept>
 #include "Wallpaper.h"
 
-Win32::HWND Pepper::Impl::Wallpaper::GetWallpaperHandle(bool _secondRun = false) {
-    Win32::HWND handle = Win32::FindWindow(L"Progman", nullptr);
+::HWND Pepper::Impl::Wallpaper::GetWallpaperHandle(bool _secondRun = false) {
+    ::HWND handle = ::FindWindow(L"Progman", nullptr);
     if (handle == nullptr) {
         throw std::runtime_error("Unable to find Progman");
     }
 
-    (void) Win32::SendMessage(handle, 0x052C, 0xD, 0);
-    (void) Win32::SendMessage(handle, 0x052C, 0xD, 1);
+    (void) ::SendMessage(handle, 0x052C, 0xD, 0);
+    (void) ::SendMessage(handle, 0x052C, 0xD, 1);
 
-    Win32::EnumWindows([](Win32::HWND _hWnd, Win32::LPARAM _lParam) -> Win32::BOOL {
+    ::EnumWindows([](::HWND _hWnd, ::LPARAM _lParam) -> ::BOOL {
 
-        Win32::HWND shellHandle = Win32::FindWindowEx(_hWnd, nullptr, L"SHELLDLL_DefView", nullptr);
+        ::HWND shellHandle = ::FindWindowEx(_hWnd, nullptr, L"SHELLDLL_DefView", nullptr);
         if (shellHandle != nullptr) {
-            auto *hnd = reinterpret_cast<Win32::HWND *>(_lParam);
-            *hnd = Win32::FindWindowEx(nullptr, _hWnd, L"WorkerW", nullptr);
-            _lParam = reinterpret_cast<Win32::LPARAM>(*hnd);
+            auto *hnd = reinterpret_cast<::HWND *>(_lParam);
+            *hnd = ::FindWindowEx(nullptr, _hWnd, L"WorkerW", nullptr);
+            _lParam = reinterpret_cast<::LPARAM>(*hnd);
             if (*hnd != nullptr) {
                 return FALSE;
             }
         }
         return TRUE;
-    }, reinterpret_cast<Win32::LPARAM>(&handle));
+    }, reinterpret_cast<::LPARAM>(&handle));
 
     if (handle == nullptr && !_secondRun) {
         handle = GetWallpaperHandle(true); //sometimes it takes 2 runs to find the window

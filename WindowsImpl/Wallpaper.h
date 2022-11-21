@@ -10,16 +10,13 @@
 #ifndef UNICODE
 #define UNICODE
 #endif
-
-namespace Win32{
 #include <windows.h>
-}
 namespace Pepper::Impl {
     class EXPORTED Wallpaper
 
     : public Pepper::Shared::Window {
     private:
-        static Win32::HWND GetWallpaperHandle(bool _secondRun);
+        static ::HWND GetWallpaperHandle(bool _secondRun);
 
     public:
 

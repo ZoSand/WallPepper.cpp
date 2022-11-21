@@ -4,7 +4,7 @@ int main() {
     Pepper::Impl::Wallpaper wp;
     for (;;)
     {
-        Win32::Sleep(10000);
+        ::Sleep(5000);
         break;
     }
 
