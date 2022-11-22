@@ -8,18 +8,18 @@ add_executable(WallPepper
 
 find_package(Vulkan REQUIRED)
 
-include_directories(${CMAKE_SOURCE_DIR}/WindowsImpl) # include files from libraries
-target_link_libraries(WallPepper WindowsImpl Vulkan::Vulkan)
+if (WIN32)
+    include_directories(${CMAKE_SOURCE_DIR}/WindowsImpl) # include files from libraries
+    target_link_libraries(WallPepper WindowsImpl)
+else ()
+    include_directories(${CMAKE_SOURCE_DIR}/LinuxImpl) # include files from libraries
+    target_link_libraries(WallPepper LinuxImpl)
+endif ()
+
 
 add_subdirectory(glfw)
 include_directories(glfw/include)
-target_link_libraries(WallPepper glfw ${GLFW_LIBRARIES})
-
-if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-    # 64 bits
-elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
-    # 32 bits
-endif()
+target_link_libraries(WallPepper glfw ${GLFW_LIBRARIES} Vulkan::Vulkan)
 
 install(TARGETS WallPepper
         RUNTIME DESTINATION bin)

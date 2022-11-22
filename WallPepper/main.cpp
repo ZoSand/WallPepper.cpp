@@ -1,8 +1,7 @@
 #include <clocale>
 #include <exception>
 #include <iostream>
-#include "../WindowsImpl/Wallpaper.h"
-#include "vulkan/vulkan.h"
+#include "Wallpaper.h" //platform-specific location
 #include "glfw/glfw3.h"
 
 
