@@ -3,7 +3,10 @@ project(Shared)
 
 set(CMAKE_CXX_STANDARD 20)
 
-add_library(Shared library.cpp library.h Window.cpp Window.h)
+add_library(Shared
+        library.cpp library.h
+        Window.cpp Window.h
+        ConstantDefinitions.h)
 
 target_compile_definitions(Shared PRIVATE WIN_EXPORT)
 

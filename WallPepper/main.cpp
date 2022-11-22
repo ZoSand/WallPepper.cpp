@@ -1,9 +1,57 @@
 #include <clocale>
+#include <exception>
+#include <iostream>
 #include "../WindowsImpl/Wallpaper.h"
+#include "vulkan/vulkan.h"
+#include "glfw/glfw3.h"
+
+
+class HelloTriangleApplication {
+public:
+    void run() {
+        initVulkan();
+        mainLoop();
+        cleanup();
+    }
+
+private:
+    GLFWwindow* window;
+
+    void initVulkan() {
+        glfwInit();
+        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+        glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+        window = glfwCreateWindow(800, 600, "Vulkan Test Window", nullptr, nullptr);
+    }
+
+    void mainLoop() {
+        while (!glfwWindowShouldClose(window)) {
+            glfwPollEvents();
+        }
+    }
+
+    void cleanup() {
+        glfwDestroyWindow(window);
+
+        glfwTerminate();
+    }
+};
 
 int main() {
     Pepper::Impl::Wallpaper wp;
     HDC testDrawSurface;
+
+#pragma region TestVulkan
+    {
+        HelloTriangleApplication app{};
+        try {
+            app.run();
+        } catch (const std::exception &e) {
+            std::cerr << e.what() << std::endl;
+            return EXIT_FAILURE;
+        }
+    }
+#pragma endregion
 
     ::setlocale(LC_ALL, "");
 

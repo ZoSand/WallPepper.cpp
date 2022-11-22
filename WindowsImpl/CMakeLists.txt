@@ -4,7 +4,9 @@ project(WindowsImpl)
 set(CMAKE_CXX_STANDARD 20)
 
 #add_library(WindowsImpl library.cpp)
-add_library(WindowsImpl SHARED library.cpp library.h Wallpaper.cpp Wallpaper.h)
+add_library(WindowsImpl SHARED
+        library.cpp library.h
+        Wallpaper.cpp Wallpaper.h)
 
 include_directories(${CMAKE_SOURCE_DIR}/Shared) # include files from libraries
 
