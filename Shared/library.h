@@ -11,5 +11,6 @@
 #       define EXPORTED
 #   endif
 
+#include "ConstantDefinitions.h"
 
 #endif //SHARED_LIBRARY_H

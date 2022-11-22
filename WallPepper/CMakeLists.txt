@@ -14,10 +14,7 @@ else ()
     target_link_libraries(WallPepper LinuxImpl)
 endif ()
 
-find_package(Vulkan REQUIRED)
-add_subdirectory(glfw)
-include_directories(glfw/include)
-target_link_libraries(WallPepper glfw ${GLFW_LIBRARIES} Vulkan::Vulkan)
+include_directories(${CMAKE_SOURCE_DIR}/Shared)
 
 install(TARGETS WallPepper
         RUNTIME DESTINATION bin)

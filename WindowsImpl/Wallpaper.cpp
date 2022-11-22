@@ -35,8 +35,16 @@
     return handle;
 }
 
-Pepper::Impl::Wallpaper::Wallpaper() {
-    SetWindow(GetWallpaperHandle());
+Pepper::Impl::Wallpaper::Wallpaper()
+        : Pepper::Shared::Window() {
+    ::HWND wnd = GetWallpaperHandle();
+    ::RECT wndRect;
+    ::GetWindowRect(wnd, &wndRect);
+    Pepper::Shared::Window::SetWindow((void*)(wnd));
+    Pepper::Shared::Window::Init(wndRect.right - wndRect.left, wndRect.bottom - wndRect.top);
+    ::SetParent(glfwGetWin32Window(Pepper::Shared::Window::GetGlWindow()), wnd);
 }
 
-Pepper::Impl::Wallpaper::~Wallpaper() = default;
+Pepper::Impl::Wallpaper::~Wallpaper() {
+    Pepper::Shared::Window::~Window();
+};

@@ -2,31 +2,33 @@
 #include <exception>
 #include <iostream>
 
-
 #include <Wallpaper.h> //platform-specific location // dynamic library compiled from LinuxImpl or WindowsImpl
 
-//#define GLFW_INCLUDE_VULKAN
+/*
+#define GLFW_INCLUDE_VULKAN
 #define VK_USE_PLATFORM_WIN32_KHR
 #include <glfw/glfw3.h>
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>
+*/
 
 
+/*
 class HelloTriangleApplication {
 public:
-    void run(Pepper::Impl::Wallpaper& wp) {
+    void run(Pepper::Impl::Wallpaper &wp) {
         initVulkan(wp);
         mainLoop();
         cleanup();
     }
 
 private:
-    GLFWwindow* window;
+    GLFWwindow *window;
 
-    void initVulkan(Pepper::Impl::Wallpaper& wp) {
+    void initVulkan(Pepper::Impl::Wallpaper &wp) {
         ::RECT windowRect;
 
-        ::GetWindowRect((HWND)wp.GetWindow(), &windowRect);
+        ::GetWindowRect((HWND) wp.GetWindow(), &windowRect);
 
         glfwInit();
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -34,7 +36,7 @@ private:
         glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
         window = glfwCreateWindow(windowRect.right - windowRect.left, windowRect.bottom - windowRect.top,
                                   "Vulkan Test Window", nullptr, nullptr);
-        ::SetParent(glfwGetWin32Window(window), (HWND)wp.GetWindow());
+        ::SetParent(glfwGetWin32Window(window), (HWND) wp.GetWindow());
     }
 
     void mainLoop() {
@@ -49,11 +51,13 @@ private:
         glfwTerminate();
     }
 };
+*/
 
 int main() {
     Pepper::Impl::Wallpaper wp;
     ::HDC testDrawSurface;
 
+/*
 #pragma region TestVulkan
     {
         ::HelloTriangleApplication app{};
@@ -65,6 +69,7 @@ int main() {
         }
     }
 #pragma endregion
+*/
 
     ::setlocale(LC_ALL, "");
 
