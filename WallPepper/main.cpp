@@ -1,14 +1,21 @@
 #include <clocale>
 #include <exception>
 #include <iostream>
-#include "Wallpaper.h" //platform-specific location
-#include "glfw/glfw3.h"
+
+
+#include <Wallpaper.h> //platform-specific location // dynamic library compiled from LinuxImpl or WindowsImpl
+
+//#define GLFW_INCLUDE_VULKAN
+#define VK_USE_PLATFORM_WIN32_KHR
+#include <glfw/glfw3.h>
+#define GLFW_EXPOSE_NATIVE_WIN32
+#include <GLFW/glfw3native.h>
 
 
 class HelloTriangleApplication {
 public:
-    void run() {
-        initVulkan();
+    void run(Pepper::Impl::Wallpaper& wp) {
+        initVulkan(wp);
         mainLoop();
         cleanup();
     }
@@ -16,11 +23,18 @@ public:
 private:
     GLFWwindow* window;
 
-    void initVulkan() {
+    void initVulkan(Pepper::Impl::Wallpaper& wp) {
+        ::RECT windowRect;
+
+        ::GetWindowRect((HWND)wp.GetWindow(), &windowRect);
+
         glfwInit();
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-        window = glfwCreateWindow(800, 600, "Vulkan Test Window", nullptr, nullptr);
+        glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
+        window = glfwCreateWindow(windowRect.right - windowRect.left, windowRect.bottom - windowRect.top,
+                                  "Vulkan Test Window", nullptr, nullptr);
+        ::SetParent(glfwGetWin32Window(window), (HWND)wp.GetWindow());
     }
 
     void mainLoop() {
@@ -38,13 +52,13 @@ private:
 
 int main() {
     Pepper::Impl::Wallpaper wp;
-    HDC testDrawSurface;
+    ::HDC testDrawSurface;
 
 #pragma region TestVulkan
     {
-        HelloTriangleApplication app{};
+        ::HelloTriangleApplication app{};
         try {
-            app.run();
+            app.run(wp);
         } catch (const std::exception &e) {
             std::cerr << e.what() << std::endl;
             return EXIT_FAILURE;
@@ -57,8 +71,8 @@ int main() {
     testDrawSurface = ::GetDCEx((::HWND)wp.GetWindow(), nullptr, 0x403);
     if (testDrawSurface != nullptr)
     {
-        RECT surface;
-        HWND hwnd = ::WindowFromDC(testDrawSurface);
+        ::RECT surface;
+        ::HWND hwnd = ::WindowFromDC(testDrawSurface);
         ::GetWindowRect(hwnd, &surface);
 
         surface.right = surface.right / 2;
@@ -77,10 +91,10 @@ int main() {
 
     for (;;)
     {
-        SHORT escapeKeyState = GetAsyncKeyState(VK_ESCAPE) & 0x8000;
-        SHORT actualKeyState = GetAsyncKeyState(VK_LBUTTON) & 0x8000;
+        ::SHORT escapeKeyState = ::GetAsyncKeyState(VK_ESCAPE) & 0x8000;
+        ::SHORT actualKeyState = ::GetAsyncKeyState(VK_LBUTTON) & 0x8000;
         if (actualKeyState != previousKeyState) {
-            printf("Oui");
+            ::printf("Oui");
         }
         previousKeyState = actualKeyState;
         if (escapeKeyState)

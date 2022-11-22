@@ -6,8 +6,6 @@ set(CMAKE_CXX_STANDARD 20)
 add_executable(WallPepper
         main.cpp)
 
-find_package(Vulkan REQUIRED)
-
 if (WIN32)
     include_directories(${CMAKE_SOURCE_DIR}/WindowsImpl) # include files from libraries
     target_link_libraries(WallPepper WindowsImpl)
@@ -16,7 +14,7 @@ else ()
     target_link_libraries(WallPepper LinuxImpl)
 endif ()
 
-
+find_package(Vulkan REQUIRED)
 add_subdirectory(glfw)
 include_directories(glfw/include)
 target_link_libraries(WallPepper glfw ${GLFW_LIBRARIES} Vulkan::Vulkan)
