@@ -17,7 +17,7 @@
 
 
 namespace Pepper::Shared {
-    class EXPORTED Window {
+    class PEPPER_SHARED_LIB Window {
     private:
         void *m_handle;
         ::GLFWwindow *m_glWindow{};

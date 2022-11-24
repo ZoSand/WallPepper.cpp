@@ -3,12 +3,10 @@
 
 #   ifdef _WIN32
 #       ifdef WIN_EXPORT
-#           define EXPORTED  __declspec( dllexport )
+#           define PEPPER_DYNAMIC_LIB  __declspec( dllexport )
 #       else
-#           define EXPORTED  __declspec( dllimport )
+#           define PEPPER_DYNAMIC_LIB  __declspec( dllimport )
 #       endif
-#   else
-#       define EXPORTED
 #   endif
 
 #endif //WINDOWSIMPL_LIBRARY_H

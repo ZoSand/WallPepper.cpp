@@ -3,12 +3,12 @@
 
 #   ifdef _WIN32
 #       ifdef WIN_EXPORT
-#           define EXPORTED  __declspec( dllexport )
+#           define PEPPER_SHARED_LIB  __declspec( dllexport )
 #       else
-#           define EXPORTED  __declspec( dllimport )
+#           define PEPPER_SHARED_LIB  __declspec( dllimport )
 #       endif
 #   else
-#       define EXPORTED
+#       define PEPPER_SHARED_LIB
 #   endif
 
 #include "ConstantDefinitions.h"

@@ -15,7 +15,7 @@
 #include <windows.h>
 
 namespace Pepper::Impl {
-    class EXPORTED Wallpaper
+    class PEPPER_DYNAMIC_LIB Wallpaper
             : public Pepper::Shared::Window {
     private:
         [[nodiscard]] static ::HWND GetWallpaperHandle(bool _secondRun);
