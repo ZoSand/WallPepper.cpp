@@ -46,6 +46,36 @@ void Pepper::Shared::Window::InitInstance() {
     ::uint32_t glfwExtensionCount = 0;
     const char **glfwExtensions;
 
+#   if PEPPER_VULKAN_VALIDATE_LAYERS // If we are in debug mode we enable validation layers for vulkan
+    std::vector<const char *> vkValidationLayers{
+            "VK_LAYER_KHRONOS_validation"
+    };
+    ::uint32_t layerCount;
+    std::vector<::VkLayerProperties> availableLayers(0);
+
+    ::vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+    availableLayers.resize(layerCount);
+
+    ::vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
+    for (const char *layerName: vkValidationLayers) {
+        bool layerFound = false;
+        for (const auto &layerProperties: availableLayers) {
+            if (::strcmp(layerName, layerProperties.layerName) == 0) {
+                layerFound = true;
+                break;
+            }
+        }
+        if (!layerFound) {
+            throw std::runtime_error("validation layer not found");
+        }
+    }
+    createInfo.enabledLayerCount = static_cast<::uint32_t>(vkValidationLayers.size());
+    createInfo.ppEnabledLayerNames = vkValidationLayers.data();
+    //TODO: add Message callback handling
+#   else
+    createInfo.enabledLayerCount = 0;
+#   endif
+
     glfwExtensions = ::glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
 
     appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -62,15 +92,14 @@ void Pepper::Shared::Window::InitInstance() {
     createInfo.enabledLayerCount = 0;
 
     result = ::vkCreateInstance(&createInfo, nullptr, &m_vkInstance);
-    if (result != VK_SUCCESS)
-    {
+    if (result != VK_SUCCESS) {
         throw std::runtime_error("Failed to create Instance");
     }
 }
 
 [[maybe_unused]] void Pepper::Shared::Window::Update() {
-    while (!glfwWindowShouldClose(m_glWindow)) {
-        glfwPollEvents();
+    while (!::glfwWindowShouldClose(m_glWindow)) {
+        ::glfwPollEvents();
     }
 }
 
