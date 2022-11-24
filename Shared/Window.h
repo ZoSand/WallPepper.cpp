@@ -21,7 +21,7 @@ namespace Pepper::Shared {
     private:
         void *m_handle;
         ::GLFWwindow *m_glWindow{};
-        ::VkInstance m_vkInstance{};
+        ::VkInstance m_vkInstance;
 
     protected:
         [[maybe_unused]] void SetWindow(void *_window);

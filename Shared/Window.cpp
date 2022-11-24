@@ -63,6 +63,7 @@ void Pepper::Shared::Window::InitInstance() {
     appInfo.apiVersion = VK_API_VERSION_1_0;
 
     createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+    createInfo.pApplicationInfo = &appInfo;
     createInfo.enabledExtensionCount = glfwExtensionCount;
     createInfo.ppEnabledExtensionNames = glfwExtensions;
     createInfo.enabledLayerCount = 0;

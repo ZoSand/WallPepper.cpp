@@ -13,7 +13,6 @@ Pepper::App::Application::~Application() = default;
 
 void Pepper::App::Application::Run() {
     m_wp->Update();
-    ::Sleep(5000);
 }
 
 void Pepper::App::Application::Init() {
