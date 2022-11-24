@@ -5,8 +5,22 @@
 #include <stdexcept>
 #include "Window.h"
 
+[[maybe_unused]] void *Pepper::Shared::Window::GetWindow() const {
+    if (m_handle == nullptr) {
+        throw std::runtime_error("Handle not initialized");
+    }
+    return m_handle;
+}
+
 [[maybe_unused]] void Pepper::Shared::Window::SetWindow(void *_window) {
     m_handle = _window;
+}
+
+[[maybe_unused]] GLFWwindow *Pepper::Shared::Window::GetGlWindow() const {
+    if (m_glWindow == nullptr) {
+        throw std::runtime_error("GlHandle not initialized");
+    }
+    return m_glWindow;
 }
 
 Pepper::Shared::Window::Window()
@@ -19,30 +33,10 @@ Pepper::Shared::Window::Window()
     InitInstance();
 }
 
-[[maybe_unused]] void *Pepper::Shared::Window::GetWindow() const {
-    if (m_handle == nullptr) {
-        throw std::runtime_error("Handle not initialized");
-    }
-    return m_handle;
-}
+Pepper::Shared::Window::~Window() = default;
 
 [[maybe_unused]] void Pepper::Shared::Window::Init(int _width, int _height) {
     m_glWindow = ::glfwCreateWindow(_width, _height, "ZWPWindow", nullptr, nullptr);
-}
-
-[[maybe_unused]] GLFWwindow *Pepper::Shared::Window::GetGlWindow() const {
-    if (m_glWindow == nullptr) {
-        throw std::runtime_error("GlHandle not initialized");
-    }
-    return m_glWindow;
-}
-
-Pepper::Shared::Window::~Window() = default;
-
-[[maybe_unused]] void Pepper::Shared::Window::Update() {
-    while (!glfwWindowShouldClose(m_glWindow)) {
-        glfwPollEvents();
-    }
 }
 
 void Pepper::Shared::Window::InitInstance() {
@@ -71,6 +65,12 @@ void Pepper::Shared::Window::InitInstance() {
     if (result != VK_SUCCESS)
     {
         throw std::runtime_error("Failed to create Instance");
+    }
+}
+
+[[maybe_unused]] void Pepper::Shared::Window::Update() {
+    while (!glfwWindowShouldClose(m_glWindow)) {
+        glfwPollEvents();
     }
 }
 
