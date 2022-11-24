@@ -24,10 +24,10 @@ namespace Pepper::Shared {
         ::GLFWwindow *m_glWindow{};
         ::VkInstance m_vkInstance;
 
+        void InitInstance();
+
     protected:
         [[maybe_unused]] void SetWindow(void *_window);
-
-        void InitInstance();
 
         [[maybe_unused]] void Init(int _width, int _height);
 
