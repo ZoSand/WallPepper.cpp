@@ -14,7 +14,8 @@ Pepper::Shared::Window::Window()
     ::glfwInit();
     ::glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     ::glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-    ::glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
+    //TODO: set GLFW_DECORATED to GLFW_FALSE
+    ::glfwWindowHint(GLFW_DECORATED, GLFW_TRUE);
     InitInstance();
 }
 
@@ -26,7 +27,7 @@ Pepper::Shared::Window::Window()
 }
 
 [[maybe_unused]] void Pepper::Shared::Window::Init(int _width, int _height) {
-    m_glWindow = ::glfwCreateWindow(_width, _height, "ZWP", nullptr, nullptr);
+    m_glWindow = ::glfwCreateWindow(_width, _height, "ZWPWindow", nullptr, nullptr);
 }
 
 [[maybe_unused]] GLFWwindow *Pepper::Shared::Window::GetGlWindow() const {
@@ -36,14 +37,12 @@ Pepper::Shared::Window::Window()
     return m_glWindow;
 }
 
-Pepper::Shared::Window::~Window() {
-    ::vkDestroyInstance(m_vkInstance, nullptr);
-    ::glfwDestroyWindow(m_glWindow);
-    ::glfwTerminate();
-}
+Pepper::Shared::Window::~Window() = default;
 
 [[maybe_unused]] void Pepper::Shared::Window::Update() {
-    ::glfwPollEvents();
+    while (!glfwWindowShouldClose(m_glWindow)) {
+        glfwPollEvents();
+    }
 }
 
 void Pepper::Shared::Window::InitInstance() {
@@ -57,7 +56,7 @@ void Pepper::Shared::Window::InitInstance() {
 
     appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
     appInfo.pApplicationName = "ZWP";
-    appInfo.applicationVersion = VK_MAKE_VERSION(0, 0, 1);
+    appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
     appInfo.pEngineName = "No Engine";
     appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
     appInfo.apiVersion = VK_API_VERSION_1_0;
@@ -73,4 +72,10 @@ void Pepper::Shared::Window::InitInstance() {
     {
         throw std::runtime_error("Failed to create Instance");
     }
+}
+
+[[maybe_unused]] void Pepper::Shared::Window::Clear() {
+    ::vkDestroyInstance(m_vkInstance, nullptr);
+    ::glfwDestroyWindow(m_glWindow);
+    ::glfwTerminate();
 }

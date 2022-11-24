@@ -20,5 +20,6 @@ void Pepper::App::Application::Init() {
 }
 
 void Pepper::App::Application::Clear() {
+    m_wp->Clear();
     delete m_wp;
 }

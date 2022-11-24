@@ -40,6 +40,8 @@ namespace Pepper::Shared {
         [[maybe_unused]] [[nodiscard]] GLFWwindow *GetGlWindow() const;
 
         [[maybe_unused]] void Update();
+
+        [[maybe_unused]] void Clear();
     };
 }
 

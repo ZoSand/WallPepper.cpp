@@ -42,7 +42,7 @@ Pepper::Impl::Wallpaper::Wallpaper()
     ::GetWindowRect(wnd, &wndRect);
     Pepper::Shared::Window::SetWindow((void*)(wnd));
     Pepper::Shared::Window::Init(wndRect.right - wndRect.left, wndRect.bottom - wndRect.top);
-    ::SetParent(glfwGetWin32Window(Pepper::Shared::Window::GetGlWindow()), wnd);
+    //::SetParent(glfwGetWin32Window(Pepper::Shared::Window::GetGlWindow()), wnd);
 }
 
 Pepper::Impl::Wallpaper::~Wallpaper() {
