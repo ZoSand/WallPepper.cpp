@@ -24,7 +24,7 @@
 }
 
 Pepper::Shared::Window::Window()
-        : m_handle(nullptr), m_glWindow(nullptr) {
+        : m_handle(nullptr), m_glWindow(nullptr), m_vkInstance(nullptr) {
     ::glfwInit();
     ::glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     ::glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
@@ -42,7 +42,7 @@ Pepper::Shared::Window::~Window() = default;
 void Pepper::Shared::Window::InitInstance() {
     ::VkApplicationInfo appInfo{};
     ::VkInstanceCreateInfo createInfo{};
-    ::VkResult result = VK_SUCCESS;
+    ::VkResult result;
     ::uint32_t glfwExtensionCount = 0;
     const char **glfwExtensions;
 
