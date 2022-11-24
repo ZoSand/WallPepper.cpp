@@ -10,12 +10,9 @@
 
 //GLFW dependencies
 #define GLFW_INCLUDE_VULKAN
-#define VK_USE_PLATFORM_WIN32_KHR
-
-#include <glfw/glfw3.h>
-
 #define GLFW_EXPOSE_NATIVE_WIN32
 
+#include <glfw/glfw3.h>
 #include <GLFW/glfw3native.h>
 
 
@@ -23,10 +20,13 @@ namespace Pepper::Shared {
     class EXPORTED Window {
     private:
         void *m_handle;
-        GLFWwindow *m_glWindow{};
+        ::GLFWwindow *m_glWindow{};
+        ::VkInstance m_vkInstance{};
 
     protected:
         [[maybe_unused]] void SetWindow(void *_window);
+
+        void InitInstance();
 
         [[maybe_unused]] void Init(int _width, int _height);
 
@@ -38,6 +38,8 @@ namespace Pepper::Shared {
         [[maybe_unused]] [[nodiscard]] void *GetWindow() const;
 
         [[maybe_unused]] [[nodiscard]] GLFWwindow *GetGlWindow() const;
+
+        [[maybe_unused]] void Update();
     };
 }
 

@@ -4,7 +4,7 @@ project(WallPepper)
 set(CMAKE_CXX_STANDARD 20)
 
 add_executable(WallPepper
-        main.cpp)
+        main.cpp Application.cpp Application.h)
 
 if (WIN32)
     include_directories(${CMAKE_SOURCE_DIR}/WindowsImpl) # include files from libraries

@@ -2,58 +2,32 @@
 #include <exception>
 #include <iostream>
 
-#include <Wallpaper.h> //platform-specific location // dynamic library compiled from LinuxImpl or WindowsImpl
-
-/*
-#define GLFW_INCLUDE_VULKAN
-#define VK_USE_PLATFORM_WIN32_KHR
-#include <glfw/glfw3.h>
-#define GLFW_EXPOSE_NATIVE_WIN32
-#include <GLFW/glfw3native.h>
-*/
-
-
-/*
-class HelloTriangleApplication {
-public:
-    void run(Pepper::Impl::Wallpaper &wp) {
-        initVulkan(wp);
-        mainLoop();
-        cleanup();
-    }
-
-private:
-    GLFWwindow *window;
-
-    void initVulkan(Pepper::Impl::Wallpaper &wp) {
-        ::RECT windowRect;
-
-        ::GetWindowRect((HWND) wp.GetWindow(), &windowRect);
-
-        glfwInit();
-        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-        glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
-        window = glfwCreateWindow(windowRect.right - windowRect.left, windowRect.bottom - windowRect.top,
-                                  "Vulkan Test Window", nullptr, nullptr);
-        ::SetParent(glfwGetWin32Window(window), (HWND) wp.GetWindow());
-    }
-
-    void mainLoop() {
-        while (!glfwWindowShouldClose(window)) {
-            glfwPollEvents();
-        }
-    }
-
-    void cleanup() {
-        glfwDestroyWindow(window);
-
-        glfwTerminate();
-    }
-};
-*/
+#include "Application.h"
 
 int main() {
+    //var declaration
+    Pepper::App::Application app;
+    int status = EXIT_SUCCESS;
+
+    //init
+    ::setlocale(LC_ALL, "");
+    app.Init();
+
+    //run loop
+    try {
+        app.Run();
+    }
+    catch (std::exception &_e) {
+        std::cerr << _e.what() << std::endl;
+        status = EXIT_FAILURE;
+    }
+
+    //cleanup
+    app.Clear();
+
+    return status;
+}
+/*
     Pepper::Impl::Wallpaper wp;
     ::HDC testDrawSurface;
 
@@ -69,7 +43,7 @@ int main() {
         }
     }
 #pragma endregion
-*/
+//FIN DU PREMIER COMMENTAIRE
 
     ::setlocale(LC_ALL, "");
 
@@ -111,4 +85,6 @@ int main() {
     }
 
     return 0;
+
 }
+*/
