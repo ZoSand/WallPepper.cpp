@@ -2,10 +2,10 @@
 // Created by ZoSand on 21/11/2022.
 //
 
-#ifndef WINDOWSIMPL_WALLPEPPER_WALLPAPER_H
-#define WINDOWSIMPL_WALLPEPPER_WALLPAPER_H
+#ifndef LINUXIMPL_WALLPEPPER_WALLPAPER_H
+#define LINUXIMPL_WALLPEPPER_WALLPAPER_H
 
-#include "../Shared/Window.h"
+#include <Window.h>
 
 #ifndef UNICODE
 #define UNICODE
@@ -21,4 +21,4 @@ namespace Pepper::Impl {
 }
 
 
-#endif //WINDOWSIMPL_WALLPEPPER_WALLPAPER_H
+#endif //LINUXIMPL_WALLPEPPER_WALLPAPER_H

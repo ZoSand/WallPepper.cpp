@@ -1,5 +1,5 @@
-#ifndef WINDOWSIMPL_LIBRARY_H
-#define WINDOWSIMPL_LIBRARY_H
+#ifndef LINUXIMPL_LIBRARY_H
+#define LINUXIMPL_LIBRARY_H
 
 #   ifdef _WIN32
 #       ifdef WIN_EXPORT
@@ -11,4 +11,4 @@
 #       define EXPORTED
 #   endif
 
-#endif //WINDOWSIMPL_LIBRARY_H
+#endif //LINUXIMPL_LIBRARY_H
