@@ -6,26 +6,31 @@
 #define SHARED_WALLPEPPER_WINDOW_H
 
 //THIS LIBRARY DEFINITIONS
-#include "library.h"
+#   include "library.h"
 
 //GLFW dependencies
-#define GLFW_INCLUDE_VULKAN
-#define GLFW_EXPOSE_NATIVE_WIN32
+#   define GLFW_INCLUDE_VULKAN
+#   define GLFW_EXPOSE_NATIVE_WIN32
 
-#include <glfw/glfw3.h>
-#include <GLFW/glfw3native.h>
-#include <vector>
+#   include <glfw/glfw3.h>
+#   include <GLFW/glfw3native.h>
 
+//other includes
+#   include <vector>
 
-namespace Pepper::Shared {
-    class PEPPER_SHARED_LIB Window {
+namespace Pepper::Shared
+{
+    class PEPPER_SHARED_LIB Window
+    {
     private:
         void *m_handle;
         ::GLFWwindow *m_glWindow{};
         ::VkInstance m_vkInstance;
 
-        [[maybe_unused]] void InitValidationLayers(::VkInstanceCreateInfo* _createInfo);
-        void InitInstanceInfos(::VkApplicationInfo* _appInfo, ::VkInstanceCreateInfo* _createInfo);
+        [[maybe_unused]] void InitValidationLayers(::VkInstanceCreateInfo *_createInfo);
+
+        void InitInstanceInfos(::VkApplicationInfo *_appInfo, ::VkInstanceCreateInfo *_createInfo);
+
         void InitInstance();
 
     protected:

@@ -5,26 +5,34 @@
 #include <stdexcept>
 #include "Window.h"
 
-[[maybe_unused]] void *Pepper::Shared::Window::GetWindow() const {
-    if (m_handle == nullptr) {
+[[maybe_unused]] void *Pepper::Shared::Window::GetWindow() const
+{
+    if (m_handle == nullptr)
+    {
         throw std::runtime_error("Handle not initialized");
     }
     return m_handle;
 }
 
-[[maybe_unused]] void Pepper::Shared::Window::SetWindow(void *_window) {
+[[maybe_unused]] void Pepper::Shared::Window::SetWindow(void *_window)
+{
     m_handle = _window;
 }
 
-[[maybe_unused]] GLFWwindow *Pepper::Shared::Window::GetGlWindow() const {
-    if (m_glWindow == nullptr) {
+[[maybe_unused]] GLFWwindow *Pepper::Shared::Window::GetGlWindow() const
+{
+    if (m_glWindow == nullptr)
+    {
         throw std::runtime_error("GlHandle not initialized");
     }
     return m_glWindow;
 }
 
 Pepper::Shared::Window::Window()
-        : m_handle(nullptr), m_glWindow(nullptr), m_vkInstance(nullptr) {
+        : m_handle(nullptr)
+        , m_glWindow(nullptr)
+        , m_vkInstance(nullptr)
+{
     ::glfwInit();
     ::glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     ::glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
@@ -35,14 +43,17 @@ Pepper::Shared::Window::Window()
 
 Pepper::Shared::Window::~Window() = default;
 
-[[maybe_unused]] void Pepper::Shared::Window::Init(int _width, int _height) {
+[[maybe_unused]] void Pepper::Shared::Window::Init(int _width, int _height)
+{
     m_glWindow = ::glfwCreateWindow(_width, _height, "ZWPWindow", nullptr, nullptr);
 }
 
-[[maybe_unused]] void Pepper::Shared::Window::InitValidationLayers(::VkInstanceCreateInfo *_createInfo) {
-    std::vector<const char *> vkValidationLayers{
-            "VK_LAYER_KHRONOS_validation"
-    };
+[[maybe_unused]] void Pepper::Shared::Window::InitValidationLayers(::VkInstanceCreateInfo *_createInfo)
+{
+    std::vector<const char *> vkValidationLayers
+            {
+                    "VK_LAYER_KHRONOS_validation"
+            };
     ::uint32_t layerCount;
     std::vector<::VkLayerProperties> availableLayers(0);
 
@@ -50,15 +61,19 @@ Pepper::Shared::Window::~Window() = default;
     availableLayers.resize(layerCount);
 
     ::vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
-    for (const char *layerName: vkValidationLayers) {
+    for (const char *layerName: vkValidationLayers)
+    {
         bool layerFound = false;
-        for (const auto &layerProperties: availableLayers) {
-            if (::strcmp(layerName, layerProperties.layerName) == 0) {
+        for (const auto &layerProperties: availableLayers)
+        {
+            if (::strcmp(layerName, layerProperties.layerName) == 0)
+            {
                 layerFound = true;
                 break;
             }
         }
-        if (!layerFound) {
+        if (!layerFound)
+        {
             throw std::runtime_error("validation layer not found");
         }
     }
@@ -67,7 +82,8 @@ Pepper::Shared::Window::~Window() = default;
     //TODO: add Message callback handling
 }
 
-void Pepper::Shared::Window::InitInstanceInfos(::VkApplicationInfo *_appInfo, ::VkInstanceCreateInfo *_createInfo) {
+void Pepper::Shared::Window::InitInstanceInfos(::VkApplicationInfo *_appInfo, ::VkInstanceCreateInfo *_createInfo)
+{
     ::uint32_t glfwExtensionCount = 0;
     const char **glfwExtensions;
     glfwExtensions = ::glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
@@ -92,7 +108,8 @@ void Pepper::Shared::Window::InitInstanceInfos(::VkApplicationInfo *_appInfo, ::
     _createInfo->enabledLayerCount = 0;
 }
 
-void Pepper::Shared::Window::InitInstance() {
+void Pepper::Shared::Window::InitInstance()
+{
     ::VkApplicationInfo appInfo{};
     ::VkInstanceCreateInfo createInfo{};
     ::VkResult result;
@@ -100,18 +117,22 @@ void Pepper::Shared::Window::InitInstance() {
     InitInstanceInfos(&appInfo, &createInfo);
 
     result = ::vkCreateInstance(&createInfo, nullptr, &m_vkInstance);
-    if (result != VK_SUCCESS) {
+    if (result != VK_SUCCESS)
+    {
         throw std::runtime_error("Failed to create Instance");
     }
 }
 
-[[maybe_unused]] void Pepper::Shared::Window::Update() {
-    while (!::glfwWindowShouldClose(m_glWindow)) {
+[[maybe_unused]] void Pepper::Shared::Window::Update()
+{
+    while (!::glfwWindowShouldClose(m_glWindow))
+    {
         ::glfwPollEvents();
     }
 }
 
-[[maybe_unused]] void Pepper::Shared::Window::Clear() {
+[[maybe_unused]] void Pepper::Shared::Window::Clear()
+{
     ::vkDestroyInstance(m_vkInstance, nullptr);
     ::glfwDestroyWindow(m_glWindow);
     ::glfwTerminate();

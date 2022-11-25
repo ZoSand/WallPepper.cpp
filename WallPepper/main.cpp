@@ -13,7 +13,6 @@ int main() {
     ::setlocale(LC_ALL, "");
     app.Init();
 
-
     try {
         //run loop
         app.Run();
