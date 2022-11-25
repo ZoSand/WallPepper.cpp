@@ -1,14 +1,10 @@
 #ifndef LINUXIMPL_LIBRARY_H
 #define LINUXIMPL_LIBRARY_H
 
-#   ifdef _WIN32
-#       ifdef WIN_EXPORT
-#           define EXPORTED  __declspec( dllexport )
-#       else
-#           define EXPORTED  __declspec( dllimport )
-#       endif
+#   ifdef LINUX_EXPORT
+#       define PEPPER_DYNAMIC_LIB __attribute__((visibility("default")))
 #   else
-#       define EXPORTED
+#       define PEPPER_DYNAMIC_LIB
 #   endif
 
 #endif //LINUXIMPL_LIBRARY_H
