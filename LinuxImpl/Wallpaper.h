@@ -12,7 +12,7 @@
 #endif
 
 namespace Pepper::Impl {
-    class PEPPER_DYNAMIC_LIB Wallpaper
+    class EXPORTED Wallpaper
             : public Pepper::Shared::Window {
     public:
         Wallpaper();

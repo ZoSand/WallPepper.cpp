@@ -13,7 +13,7 @@ add_subdirectory(glfw)
 include_directories(glfw/include)
 target_link_libraries(Shared glfw ${GLFW_LIBRARIES} Vulkan::Vulkan)
 
-target_compile_definitions(Shared PRIVATE SHARED_EXPORT)
+target_compile_definitions(Shared PRIVATE WIN_EXPORT)
 
 install(TARGETS Shared
         LIBRARY DESTINATION lib
