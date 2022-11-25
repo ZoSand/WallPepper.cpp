@@ -39,14 +39,7 @@ Pepper::Shared::Window::~Window() = default;
     m_glWindow = ::glfwCreateWindow(_width, _height, "ZWPWindow", nullptr, nullptr);
 }
 
-void Pepper::Shared::Window::InitInstance() {
-    ::VkApplicationInfo appInfo{};
-    ::VkInstanceCreateInfo createInfo{};
-    ::VkResult result;
-    ::uint32_t glfwExtensionCount = 0;
-    const char **glfwExtensions;
-
-#   if PEPPER_VULKAN_VALIDATE_LAYERS // If we are in debug mode we enable validation layers for vulkan
+[[maybe_unused]] void Pepper::Shared::Window::InitValidationLayers(::VkInstanceCreateInfo *_createInfo) {
     std::vector<const char *> vkValidationLayers{
             "VK_LAYER_KHRONOS_validation"
     };
@@ -69,27 +62,42 @@ void Pepper::Shared::Window::InitInstance() {
             throw std::runtime_error("validation layer not found");
         }
     }
-    createInfo.enabledLayerCount = static_cast<::uint32_t>(vkValidationLayers.size());
-    createInfo.ppEnabledLayerNames = vkValidationLayers.data();
+    _createInfo->enabledLayerCount = static_cast<::uint32_t>(vkValidationLayers.size());
+    _createInfo->ppEnabledLayerNames = vkValidationLayers.data();
     //TODO: add Message callback handling
-#   else
-    createInfo.enabledLayerCount = 0;
-#   endif
+}
 
+void Pepper::Shared::Window::InitInstanceInfos(::VkApplicationInfo *_appInfo, ::VkInstanceCreateInfo *_createInfo) {
+    ::uint32_t glfwExtensionCount = 0;
+    const char **glfwExtensions;
     glfwExtensions = ::glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
 
-    appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    appInfo.pApplicationName = "ZWP";
-    appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.pEngineName = "No Engine";
-    appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.apiVersion = VK_API_VERSION_1_0;
+#   if PEPPER_VULKAN_VALIDATE_LAYERS // If we are in debug mode we enable validation layers for vulkan
+    InitValidationLayers(_createInfo);
+#   else
+    _createInfo->enabledLayerCount = 0;
+#   endif
 
-    createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-    createInfo.pApplicationInfo = &appInfo;
-    createInfo.enabledExtensionCount = glfwExtensionCount;
-    createInfo.ppEnabledExtensionNames = glfwExtensions;
-    createInfo.enabledLayerCount = 0;
+    _appInfo->sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+    _appInfo->pApplicationName = "ZWP";
+    _appInfo->applicationVersion = VK_MAKE_VERSION(1, 0, 0);
+    _appInfo->pEngineName = "No Engine";
+    _appInfo->engineVersion = VK_MAKE_VERSION(1, 0, 0);
+    _appInfo->apiVersion = VK_API_VERSION_1_0;
+
+    _createInfo->sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+    _createInfo->pApplicationInfo = _appInfo;
+    _createInfo->enabledExtensionCount = glfwExtensionCount;
+    _createInfo->ppEnabledExtensionNames = glfwExtensions;
+    _createInfo->enabledLayerCount = 0;
+}
+
+void Pepper::Shared::Window::InitInstance() {
+    ::VkApplicationInfo appInfo{};
+    ::VkInstanceCreateInfo createInfo{};
+    ::VkResult result;
+
+    InitInstanceInfos(&appInfo, &createInfo);
 
     result = ::vkCreateInstance(&createInfo, nullptr, &m_vkInstance);
     if (result != VK_SUCCESS) {

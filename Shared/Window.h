@@ -24,6 +24,8 @@ namespace Pepper::Shared {
         ::GLFWwindow *m_glWindow{};
         ::VkInstance m_vkInstance;
 
+        [[maybe_unused]] void InitValidationLayers(::VkInstanceCreateInfo* _createInfo);
+        void InitInstanceInfos(::VkApplicationInfo* _appInfo, ::VkInstanceCreateInfo* _createInfo);
         void InitInstance();
 
     protected:
