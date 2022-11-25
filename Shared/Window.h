@@ -33,6 +33,10 @@ namespace Pepper::Shared
 
         void InitInstance();
 
+        static ::uint32_t RateDeviceSuitability(::VkPhysicalDevice _device);
+
+        void PickPhysicalDevice();
+
     protected:
         [[maybe_unused]] void SetWindow(void *_window);
 

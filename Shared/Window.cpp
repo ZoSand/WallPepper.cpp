@@ -3,6 +3,7 @@
 //
 
 #include <stdexcept>
+#include <map>
 #include "Window.h"
 
 [[maybe_unused]] void *Pepper::Shared::Window::GetWindow() const
@@ -39,6 +40,7 @@ Pepper::Shared::Window::Window()
     //TODO: set GLFW_DECORATED to GLFW_FALSE
     ::glfwWindowHint(GLFW_DECORATED, GLFW_TRUE);
     InitInstance();
+    PickPhysicalDevice();
 }
 
 Pepper::Shared::Window::~Window() = default;
@@ -120,6 +122,61 @@ void Pepper::Shared::Window::InitInstance()
     if (result != VK_SUCCESS)
     {
         throw std::runtime_error("Failed to create Instance");
+    }
+}
+
+::uint32_t Pepper::Shared::Window::RateDeviceSuitability(::VkPhysicalDevice _device)
+{
+    ::VkPhysicalDeviceProperties deviceProperties;
+    ::VkPhysicalDeviceFeatures deviceFeatures;
+    ::uint32_t score = 0;
+
+    ::vkGetPhysicalDeviceProperties(_device, &deviceProperties);
+    ::vkGetPhysicalDeviceFeatures(_device, &deviceFeatures);
+
+    if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
+    {
+        score += 1000;
+    }
+    score += deviceProperties.limits.maxImageDimension2D;
+
+    if (!deviceFeatures.geometryShader)
+    {
+        return 0;
+    }
+    return score;
+}
+
+
+void Pepper::Shared::Window::PickPhysicalDevice()
+{
+    ::VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+    ::uint32_t deviceCount = 0;
+    std::multimap<::uint32_t, ::VkPhysicalDevice> candidates;
+    std::vector<::VkPhysicalDevice> devices(0);
+
+
+    ::vkEnumeratePhysicalDevices(m_vkInstance, &deviceCount, nullptr);
+    if (deviceCount == 0)
+    {
+        throw std::runtime_error("Failed to find GPUs with Vulkan support");
+    }
+    devices.resize(deviceCount);
+
+    ::vkEnumeratePhysicalDevices(m_vkInstance, &deviceCount, devices.data());
+    for (const auto &device: devices)
+    {
+        ::uint32_t score = RateDeviceSuitability(device);
+        candidates.insert(std::make_pair(score, device));
+    }
+
+    if (candidates.rbegin()->first > 0)
+    {
+        physicalDevice = candidates.rbegin()->second;
+    }
+    else
+    {
+        throw std::runtime_error("Failed to find a suitable GPU");
     }
 }
 
