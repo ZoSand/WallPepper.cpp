@@ -31,31 +31,40 @@
 
 Pepper::Shared::Window::Window()
         : m_handle(nullptr)
-        , m_glWindow(nullptr)
-        , m_vkInstance(nullptr)
+        , m_glWindow(VK_NULL_HANDLE)
+        , m_vkInstance(VK_NULL_HANDLE)
+        , m_physicalDevice(VK_NULL_HANDLE)
+        , m_device(VK_NULL_HANDLE)
+        , m_graphicsQueue(VK_NULL_HANDLE)
+        , m_vkValidationLayers()
 {
     ::glfwInit();
     ::glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     ::glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
     //TODO: set GLFW_DECORATED to GLFW_FALSE
     ::glfwWindowHint(GLFW_DECORATED, GLFW_TRUE);
-    InitInstance();
-    PickPhysicalDevice();
 }
 
 Pepper::Shared::Window::~Window() = default;
 
 [[maybe_unused]] void Pepper::Shared::Window::Init(int _width, int _height)
 {
+
+#   if PEPPER_VULKAN_VALIDATE_LAYERS
+    m_vkValidationLayers.emplace_back("VK_LAYER_KHRONOS_validation");
+    InitValidationLayers();
+#   endif
+    InitInstance();
+    PickPhysicalDevice();
+    CreateLogicalDevice();
+
     m_glWindow = ::glfwCreateWindow(_width, _height, "ZWPWindow", nullptr, nullptr);
 }
 
-[[maybe_unused]] void Pepper::Shared::Window::InitValidationLayers(::VkInstanceCreateInfo *_createInfo)
+#   if PEPPER_VULKAN_VALIDATE_LAYERS
+
+void Pepper::Shared::Window::InitValidationLayers()
 {
-    std::vector<const char *> vkValidationLayers
-            {
-                    "VK_LAYER_KHRONOS_validation"
-            };
     ::uint32_t layerCount;
     std::vector<::VkLayerProperties> availableLayers(0);
 
@@ -63,7 +72,7 @@ Pepper::Shared::Window::~Window() = default;
     availableLayers.resize(layerCount);
 
     ::vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
-    for (const char *layerName: vkValidationLayers)
+    for (const char *layerName: m_vkValidationLayers)
     {
         bool layerFound = false;
         for (const auto &layerProperties: availableLayers)
@@ -79,10 +88,10 @@ Pepper::Shared::Window::~Window() = default;
             throw std::runtime_error("validation layer not found");
         }
     }
-    _createInfo->enabledLayerCount = static_cast<::uint32_t>(vkValidationLayers.size());
-    _createInfo->ppEnabledLayerNames = vkValidationLayers.data();
     //TODO: add Message callback handling
 }
+
+#   endif
 
 void Pepper::Shared::Window::InitInstanceInfos(::VkApplicationInfo *_appInfo, ::VkInstanceCreateInfo *_createInfo)
 {
@@ -91,7 +100,8 @@ void Pepper::Shared::Window::InitInstanceInfos(::VkApplicationInfo *_appInfo, ::
     glfwExtensions = ::glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
 
 #   if PEPPER_VULKAN_VALIDATE_LAYERS // If we are in debug mode we enable validation layers for vulkan
-    InitValidationLayers(_createInfo);
+    _createInfo->enabledLayerCount = static_cast<::uint32_t>(m_vkValidationLayers.size());
+    _createInfo->ppEnabledLayerNames = m_vkValidationLayers.data();
 #   else
     _createInfo->enabledLayerCount = 0;
 #   endif
@@ -147,10 +157,8 @@ void Pepper::Shared::Window::InitInstance()
     return score;
 }
 
-
 void Pepper::Shared::Window::PickPhysicalDevice()
 {
-    ::VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
     ::uint32_t deviceCount = 0;
     std::multimap<::uint32_t, ::VkPhysicalDevice> candidates;
     std::vector<::VkPhysicalDevice> devices(0);
@@ -172,12 +180,84 @@ void Pepper::Shared::Window::PickPhysicalDevice()
 
     if (candidates.rbegin()->first > 0)
     {
-        physicalDevice = candidates.rbegin()->second;
+        m_physicalDevice = candidates.rbegin()->second;
     }
     else
     {
         throw std::runtime_error("Failed to find a suitable GPU");
     }
+}
+
+Pepper::Shared::Window::QueueFamilyIndices Pepper::Shared::Window::FindQueueFamilies(::VkPhysicalDevice _device)
+{
+    QueueFamilyIndices indices{};
+    ::uint32_t queueFamilyCount = 0;
+    std::vector<::VkQueueFamilyProperties> queueFamilies;
+    int i = 0;
+
+    ::vkGetPhysicalDeviceQueueFamilyProperties(_device, &queueFamilyCount, nullptr);
+    queueFamilies.resize(queueFamilyCount);
+
+    ::vkGetPhysicalDeviceQueueFamilyProperties(_device, &queueFamilyCount, queueFamilies.data());
+    for (const auto &queueFamily: queueFamilies)
+    {
+        if (queueFamily.queueCount > 0 && queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+        {
+            indices.graphicsFamily = i;
+        }
+        if (indices.IsComplete())
+        {
+            break;
+        }
+        i++;
+    }
+
+    return indices;
+}
+
+void Pepper::Shared::Window::InitDeviceInfos(
+        QueueFamilyIndices _indices, ::VkDeviceQueueCreateInfo *_queueCreateInfo,
+        ::VkDeviceCreateInfo *_deviceCreateInfo
+                                            )
+{
+    float queuePriority = 1.0f;
+    ::VkPhysicalDeviceFeatures deviceFeatures{};
+
+    _queueCreateInfo->sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    _queueCreateInfo->queueFamilyIndex = _indices.graphicsFamily.value();
+    _queueCreateInfo->queueCount = 1;
+    _queueCreateInfo->pQueuePriorities = &queuePriority;
+
+    _deviceCreateInfo->sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    _deviceCreateInfo->queueCreateInfoCount = 1;
+    _deviceCreateInfo->pQueueCreateInfos = _queueCreateInfo;
+    _deviceCreateInfo->pEnabledFeatures = &deviceFeatures;
+    _deviceCreateInfo->enabledExtensionCount = 0;
+
+#   if PEPPER_VULKAN_VALIDATE_LAYERS
+    _deviceCreateInfo->enabledLayerCount = static_cast<::uint32_t>(m_vkValidationLayers.size());
+    _deviceCreateInfo->ppEnabledLayerNames = m_vkValidationLayers.data();
+#   else
+    _deviceCreateInfo->enabledLayerCount = 0;
+#   endif
+}
+
+void Pepper::Shared::Window::CreateLogicalDevice()
+{
+    QueueFamilyIndices indices = FindQueueFamilies(m_physicalDevice);
+    ::VkDeviceQueueCreateInfo createInfo{};
+    ::VkDeviceCreateInfo deviceCreateInfo{};
+    ::VkResult result;
+
+    InitDeviceInfos(indices, &createInfo, &deviceCreateInfo);
+
+    result = ::vkCreateDevice(m_physicalDevice, &deviceCreateInfo, nullptr, &m_device);
+    if (result != VK_SUCCESS)
+    {
+        throw std::runtime_error("Failed to create logical device");
+    }
+
+    ::vkGetDeviceQueue(m_device, indices.graphicsFamily.value(), 0, &m_graphicsQueue);
 }
 
 [[maybe_unused]] void Pepper::Shared::Window::Update()
@@ -190,6 +270,7 @@ void Pepper::Shared::Window::PickPhysicalDevice()
 
 [[maybe_unused]] void Pepper::Shared::Window::Clear()
 {
+    ::vkDestroyDevice(m_device, nullptr);
     ::vkDestroyInstance(m_vkInstance, nullptr);
     ::glfwDestroyWindow(m_glWindow);
     ::glfwTerminate();
