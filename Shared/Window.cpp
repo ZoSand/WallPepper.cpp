@@ -4,6 +4,7 @@
 
 #include <stdexcept>
 #include <map>
+#include <set>
 #include "Window.h"
 
 [[maybe_unused]] void *Pepper::Shared::Window::GetWindow() const
@@ -36,29 +37,38 @@ Pepper::Shared::Window::Window()
         , m_physicalDevice(VK_NULL_HANDLE)
         , m_device(VK_NULL_HANDLE)
         , m_graphicsQueue(VK_NULL_HANDLE)
+        , m_presentQueue(VK_NULL_HANDLE)
+        , m_surface(VK_NULL_HANDLE)
+#if PEPPER_VULKAN_VALIDATE_LAYERS
         , m_vkValidationLayers()
+#endif
 {
     ::glfwInit();
     ::glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     ::glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
     //TODO: set GLFW_DECORATED to GLFW_FALSE
     ::glfwWindowHint(GLFW_DECORATED, GLFW_TRUE);
+    //TODO: set GLFW_VISIBLE to GLFW_FALSE to start window as hidden
+    ::glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE);
 }
 
 Pepper::Shared::Window::~Window() = default;
 
 [[maybe_unused]] void Pepper::Shared::Window::Init(int _width, int _height)
 {
-
+    m_glWindow = ::glfwCreateWindow(_width, _height, "ZWPWindow", nullptr, nullptr);
+    if (m_glWindow == nullptr)
+    {
+        throw std::runtime_error("Failed to create GLFW window");
+    }
 #   if PEPPER_VULKAN_VALIDATE_LAYERS
     m_vkValidationLayers.emplace_back("VK_LAYER_KHRONOS_validation");
     InitValidationLayers();
 #   endif
     InitInstance();
+    CreateSurface();
     PickPhysicalDevice();
     CreateLogicalDevice();
-
-    m_glWindow = ::glfwCreateWindow(_width, _height, "ZWPWindow", nullptr, nullptr);
 }
 
 #   if PEPPER_VULKAN_VALIDATE_LAYERS
@@ -135,6 +145,17 @@ void Pepper::Shared::Window::InitInstance()
     }
 }
 
+void Pepper::Shared::Window::CreateSurface()
+{
+    ::VkResult result;
+
+    result = ::glfwCreateWindowSurface(m_vkInstance, m_glWindow, nullptr, &m_surface);
+    if (result != VK_SUCCESS)
+    {
+        throw std::runtime_error("Failed to create window surface");
+    }
+}
+
 ::uint32_t Pepper::Shared::Window::RateDeviceSuitability(::VkPhysicalDevice _device)
 {
     ::VkPhysicalDeviceProperties deviceProperties;
@@ -192,6 +213,7 @@ Pepper::Shared::Window::QueueFamilyIndices Pepper::Shared::Window::FindQueueFami
 {
     QueueFamilyIndices indices{};
     ::uint32_t queueFamilyCount = 0;
+    ::VkBool32 presentsSupport = false;
     std::vector<::VkQueueFamilyProperties> queueFamilies;
     int i = 0;
 
@@ -201,9 +223,14 @@ Pepper::Shared::Window::QueueFamilyIndices Pepper::Shared::Window::FindQueueFami
     ::vkGetPhysicalDeviceQueueFamilyProperties(_device, &queueFamilyCount, queueFamilies.data());
     for (const auto &queueFamily: queueFamilies)
     {
-        if (queueFamily.queueCount > 0 && queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+        ::vkGetPhysicalDeviceSurfaceSupportKHR(_device, i, m_surface, &presentsSupport);
+        if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
         {
             indices.graphicsFamily = i;
+        }
+        if (presentsSupport)
+        {
+            indices.presentFamily = i;
         }
         if (indices.IsComplete())
         {
@@ -215,22 +242,29 @@ Pepper::Shared::Window::QueueFamilyIndices Pepper::Shared::Window::FindQueueFami
     return indices;
 }
 
-void Pepper::Shared::Window::InitDeviceInfos(
-        QueueFamilyIndices _indices, ::VkDeviceQueueCreateInfo *_queueCreateInfo,
-        ::VkDeviceCreateInfo *_deviceCreateInfo
-                                            )
+void Pepper::Shared::Window::InitDeviceInfos(QueueFamilyIndices _indices, ::VkDeviceCreateInfo *_deviceCreateInfo)
 {
     float queuePriority = 1.0f;
     ::VkPhysicalDeviceFeatures deviceFeatures{};
+    std::vector<::VkDeviceQueueCreateInfo> queueCreateInfos{};
+    std::set<::uint32_t> queueFamilies = {
+            _indices.graphicsFamily.value(),
+            _indices.presentFamily.value()
+    };
 
-    _queueCreateInfo->sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-    _queueCreateInfo->queueFamilyIndex = _indices.graphicsFamily.value();
-    _queueCreateInfo->queueCount = 1;
-    _queueCreateInfo->pQueuePriorities = &queuePriority;
+    for (::uint32_t queueFamily: queueFamilies)
+    {
+        ::VkDeviceQueueCreateInfo queueCreateInfo;
+        queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        queueCreateInfo.queueFamilyIndex = queueFamily;
+        queueCreateInfo.queueCount = 1;
+        queueCreateInfo.pQueuePriorities = &queuePriority;
+
+    }
 
     _deviceCreateInfo->sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    _deviceCreateInfo->queueCreateInfoCount = 1;
-    _deviceCreateInfo->pQueueCreateInfos = _queueCreateInfo;
+    _deviceCreateInfo->queueCreateInfoCount = static_cast<::uint32_t>(queueCreateInfos.size());
+    _deviceCreateInfo->pQueueCreateInfos = queueCreateInfos.data();
     _deviceCreateInfo->pEnabledFeatures = &deviceFeatures;
     _deviceCreateInfo->enabledExtensionCount = 0;
 
@@ -245,11 +279,10 @@ void Pepper::Shared::Window::InitDeviceInfos(
 void Pepper::Shared::Window::CreateLogicalDevice()
 {
     QueueFamilyIndices indices = FindQueueFamilies(m_physicalDevice);
-    ::VkDeviceQueueCreateInfo createInfo{};
     ::VkDeviceCreateInfo deviceCreateInfo{};
     ::VkResult result;
 
-    InitDeviceInfos(indices, &createInfo, &deviceCreateInfo);
+    InitDeviceInfos(indices, &deviceCreateInfo);
 
     result = ::vkCreateDevice(m_physicalDevice, &deviceCreateInfo, nullptr, &m_device);
     if (result != VK_SUCCESS)
@@ -258,6 +291,7 @@ void Pepper::Shared::Window::CreateLogicalDevice()
     }
 
     ::vkGetDeviceQueue(m_device, indices.graphicsFamily.value(), 0, &m_graphicsQueue);
+    ::vkGetDeviceQueue(m_device, indices.presentFamily.value(), 0, &m_presentQueue);
 }
 
 [[maybe_unused]] void Pepper::Shared::Window::Update()
@@ -271,6 +305,7 @@ void Pepper::Shared::Window::CreateLogicalDevice()
 [[maybe_unused]] void Pepper::Shared::Window::Clear()
 {
     ::vkDestroyDevice(m_device, nullptr);
+    ::vkDestroySurfaceKHR(m_vkInstance, m_surface, nullptr);
     ::vkDestroyInstance(m_vkInstance, nullptr);
     ::glfwDestroyWindow(m_glWindow);
     ::glfwTerminate();

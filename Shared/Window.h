@@ -25,13 +25,16 @@ namespace Pepper::Shared
     {
     private:
         void *m_handle;
-        ::GLFWwindow *m_glWindow{};
+        ::GLFWwindow *m_glWindow;
         ::VkInstance m_vkInstance;
         ::VkPhysicalDevice m_physicalDevice;
         ::VkDevice m_device;
         ::VkQueue m_graphicsQueue;
+        ::VkQueue m_presentQueue;
+        ::VkSurfaceKHR m_surface;
 
 #   if PEPPER_VULKAN_VALIDATE_LAYERS
+
         std::vector<const char *> m_vkValidationLayers;
 
         void InitValidationLayers();
@@ -41,31 +44,27 @@ namespace Pepper::Shared
         struct QueueFamilyIndices
         {
             std::optional<::uint32_t> graphicsFamily;
+            std::optional<::uint32_t> presentFamily;
 
             [[maybe_unused]] [[nodiscard]] bool IsComplete() const
             {
-                return graphicsFamily.has_value();
+                return graphicsFamily.has_value() && presentFamily.has_value();
             }
         };
 
         [[nodiscard]] static ::uint32_t RateDeviceSuitability(::VkPhysicalDevice _device);
 
-        [[nodiscard]] static QueueFamilyIndices FindQueueFamilies(::VkPhysicalDevice _device);
+        [[nodiscard]] QueueFamilyIndices FindQueueFamilies(::VkPhysicalDevice _device);
 
-        void InitInstanceInfos(
-                ::VkApplicationInfo *_appInfo,
-                ::VkInstanceCreateInfo *_createInfo
-                              );
+        void InitInstanceInfos(::VkApplicationInfo *_appInfo, ::VkInstanceCreateInfo *_createInfo);
 
         void InitInstance();
 
+        void CreateSurface();
+
         void PickPhysicalDevice();
 
-        void InitDeviceInfos(
-                QueueFamilyIndices _indices,
-                ::VkDeviceQueueCreateInfo *_queueCreateInfo,
-                ::VkDeviceCreateInfo *_deviceCreateInfo
-                            );
+        void InitDeviceInfos(QueueFamilyIndices _indices, ::VkDeviceCreateInfo *_deviceCreateInfo);
 
         void CreateLogicalDevice();
 

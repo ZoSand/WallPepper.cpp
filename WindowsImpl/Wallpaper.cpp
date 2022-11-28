@@ -45,6 +45,4 @@ Pepper::Impl::Wallpaper::Wallpaper()
     //::SetParent(glfwGetWin32Window(Pepper::Shared::Window::GetGlWindow()), wnd);
 }
 
-Pepper::Impl::Wallpaper::~Wallpaper() {
-    Pepper::Shared::Window::~Window();
-};
+Pepper::Impl::Wallpaper::~Wallpaper() = default;
