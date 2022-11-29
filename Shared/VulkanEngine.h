@@ -33,6 +33,7 @@ namespace Pepper::Core
         ::VkQueue m_graphicsQueue;
         ::VkQueue m_presentQueue;
         ::VkSurfaceKHR m_surface;
+        std::vector<const char*> m_deviceExtensions;
 
 #       if PEPPER_VULKAN_VALIDATE_LAYERS
 
@@ -53,9 +54,20 @@ namespace Pepper::Core
             }
         };
 
+        struct SwapChainSupportDetails
+        {
+            ::VkSurfaceCapabilitiesKHR capabilities;
+            std::vector<::VkSurfaceFormatKHR> formats;
+            std::vector<::VkPresentModeKHR> presentModes;
+        };
+
+        NO_DISCARD bool IsDeviceSuitable(::VkPhysicalDevice _device);
+
         NO_DISCARD static ::uint32_t RateDeviceSuitability(::VkPhysicalDevice _device);
 
         NO_DISCARD QueueFamilyIndices FindQueueFamilies(::VkPhysicalDevice _device);
+
+        NO_DISCARD SwapChainSupportDetails QuerySwapChainSupport(::VkPhysicalDevice _device);
 
         void InitInstanceInfos(::VkApplicationInfo *_appInfo, ::VkInstanceCreateInfo *_createInfo);
 

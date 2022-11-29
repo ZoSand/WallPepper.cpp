@@ -35,4 +35,12 @@
 #       define NO_DISCARD_UNUSED NO_DISCARD MAYBE_UNUSED
 #   endif
 
+#   if !defined(RUNTIME_ASSERT)
+#       define RUNTIME_ASSERT(condition, message)   \
+        if (!(condition))                           \
+        {                                           \
+            throw std::runtime_error(message);      \
+        }
+#   endif
+
 #endif //SHARED_CONSTANT_DEFINITIONS_H

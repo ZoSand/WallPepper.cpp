@@ -4,7 +4,7 @@
 
 #include <stdexcept>
 #include <map>
-#include <set>$
+#include <set>
 
 #include "VulkanEngine.h"
 
@@ -34,17 +34,12 @@ namespace Pepper::Core
         ::VkResult result;
 
         result = ::vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
-        if (result != VK_SUCCESS)
-        {
-            throw std::runtime_error("Failed to get instance layer properties count");
-        }
+        RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to get instance layer properties count")
+
         availableLayers.resize(layerCount);
 
         result = ::vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
-        if (result != VK_SUCCESS)
-        {
-            throw std::runtime_error("Failed to get instance layer properties");
-        }
+        RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to get instance layer properties")
 
         for (const char *layerName: m_vkValidationLayers)
         {
@@ -57,15 +52,40 @@ namespace Pepper::Core
                     break;
                 }
             }
-            if (!layerFound)
-            {
-                throw std::runtime_error("validation layer not found");
-            }
+            RUNTIME_ASSERT(layerFound, "Validation layer not found")
         }
         //TODO: add Message callback handling
     }
 
 #   endif
+
+    bool VulkanEngine::IsDeviceSuitable(::VkPhysicalDevice _device)
+    {
+        ::uint32_t extensionCount;
+        std::vector<::VkExtensionProperties> availableExtensions(0);
+        std::set<std::string> requiredExtensions(m_deviceExtensions.begin(), m_deviceExtensions.end());
+        ::VkResult result;
+
+        result = ::vkEnumerateDeviceExtensionProperties(_device, nullptr, &extensionCount, nullptr);
+        RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to get device extension properties count")
+
+        availableExtensions.resize(extensionCount);
+        result = ::vkEnumerateDeviceExtensionProperties(_device, nullptr, &extensionCount, availableExtensions.data());
+        RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to get device extension properties")
+
+        for (const auto &extension: availableExtensions)
+        {
+            requiredExtensions.erase(extension.extensionName);
+        }
+
+        if (!requiredExtensions.empty())
+        {
+            return false;
+        }
+        return true;
+        //SwapChainSupportDetails swapChainSupport = QuerySwapChainSupport(_device);
+        //return !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
+    }
 
     ::uint32_t VulkanEngine::RateDeviceSuitability(::VkPhysicalDevice _device)
     {
@@ -105,10 +125,8 @@ namespace Pepper::Core
         {
             ::VkResult result;
             result = ::vkGetPhysicalDeviceSurfaceSupportKHR(_device, i, m_surface, &presentsSupport);
-            if (result != VK_SUCCESS)
-            {
-                throw std::runtime_error("Failed to get physical device surface support");
-            }
+            RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to physical device surface support")
+
             if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
             {
                 indices.graphicsFamily = i;
@@ -123,11 +141,43 @@ namespace Pepper::Core
             }
             i++;
         }
-        if (!indices.IsComplete())
-        {
-            throw std::runtime_error("failed to find suitable queue families");
-        }
+        RUNTIME_ASSERT(indices.IsComplete(), "Failed to find suitable queue families")
+
         return indices;
+    }
+
+    VulkanEngine::SwapChainSupportDetails VulkanEngine::QuerySwapChainSupport(::VkPhysicalDevice _device)
+    {
+        SwapChainSupportDetails details;
+        ::uint32_t formatCount;
+        ::uint32_t presentModeCount;
+        ::VkResult result;
+
+        result = ::vkGetPhysicalDeviceSurfaceCapabilitiesKHR(_device, m_surface, &details.capabilities);
+        RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to get physical device surface capabilities")
+
+        result = ::vkGetPhysicalDeviceSurfaceFormatsKHR(_device, m_surface, &formatCount, nullptr);
+        RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to get physical device surface formats count")
+
+        if (formatCount != 0)
+        {
+            details.formats.resize(formatCount);
+            result = ::vkGetPhysicalDeviceSurfaceFormatsKHR(_device, m_surface, &formatCount, details.formats.data());
+            RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to get physical device surface formats")
+        }
+
+        result = ::vkGetPhysicalDeviceSurfacePresentModesKHR(_device, m_surface, &presentModeCount, nullptr);
+        RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to get physical device surface present modes count")
+
+        if (presentModeCount != 0)
+        {
+            details.presentModes.resize(presentModeCount);
+            result = ::vkGetPhysicalDeviceSurfacePresentModesKHR(_device, m_surface, &presentModeCount,
+                                                                 details.presentModes.data());
+            RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to get physical device surface present modes")
+        }
+
+        return details;
     }
 
     void VulkanEngine::InitInstanceInfos(::VkApplicationInfo *_appInfo, ::VkInstanceCreateInfo *_createInfo)
@@ -135,13 +185,6 @@ namespace Pepper::Core
         ::uint32_t glfwExtensionCount = 0;
         const char **glfwExtensions;
         glfwExtensions = ::glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-
-#   if PEPPER_VULKAN_VALIDATE_LAYERS // If we are in debug mode we enable validation layers for vulkan
-        _createInfo->enabledLayerCount = static_cast<::uint32_t>(m_vkValidationLayers.size());
-        _createInfo->ppEnabledLayerNames = m_vkValidationLayers.data();
-#   else //else we disable them
-        _createInfo->enabledLayerCount = 0;
-#   endif
 
         _appInfo->sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
         _appInfo->pApplicationName = "ZWP";
@@ -154,7 +197,13 @@ namespace Pepper::Core
         _createInfo->pApplicationInfo = _appInfo;
         _createInfo->enabledExtensionCount = glfwExtensionCount;
         _createInfo->ppEnabledExtensionNames = glfwExtensions;
+
+#   if PEPPER_VULKAN_VALIDATE_LAYERS // If we are in debug mode we enable validation layers for vulkan
+        _createInfo->enabledLayerCount = static_cast<::uint32_t>(m_vkValidationLayers.size());
+        _createInfo->ppEnabledLayerNames = m_vkValidationLayers.data();
+#   else //else we disable them
         _createInfo->enabledLayerCount = 0;
+#   endif
     }
 
     void VulkanEngine::InitInstance()
@@ -166,10 +215,7 @@ namespace Pepper::Core
         InitInstanceInfos(&appInfo, &createInfo);
 
         result = ::vkCreateInstance(&createInfo, nullptr, &m_vkInstance);
-        if (result != VK_SUCCESS)
-        {
-            throw std::runtime_error("Failed to create Instance");
-        }
+        RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to create Instance")
     }
 
     void VulkanEngine::CreateSurface()
@@ -177,10 +223,7 @@ namespace Pepper::Core
         ::VkResult result;
 
         result = ::glfwCreateWindowSurface(m_vkInstance, m_glWindow, nullptr, &m_surface);
-        if (result != VK_SUCCESS)
-        {
-            throw std::runtime_error("Failed to create window surface");
-        }
+        RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to create window surface")
     }
 
     void VulkanEngine::PickPhysicalDevice()
@@ -192,35 +235,22 @@ namespace Pepper::Core
 
 
         result = ::vkEnumeratePhysicalDevices(m_vkInstance, &deviceCount, nullptr);
-        if (result != VK_SUCCESS)
-        {
-            throw std::runtime_error("Failed to enumerate physical devices");
-        }
-        if (deviceCount == 0)
-        {
-            throw std::runtime_error("Failed to find GPUs with Vulkan support");
-        }
+        RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to get physical device count")
+        RUNTIME_ASSERT(deviceCount != 0, "Failed to find GPUs with Vulkan support")
+
         devices.resize(deviceCount);
 
         result = ::vkEnumeratePhysicalDevices(m_vkInstance, &deviceCount, devices.data());
-        if (result != VK_SUCCESS)
-        {
-            throw std::runtime_error("Failed to enumerate physical devices");
-        }
+        RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to get physical devices")
+
         for (const auto &device: devices)
         {
             ::uint32_t score = RateDeviceSuitability(device);
             candidates.insert(std::make_pair(score, device));
         }
 
-        if (candidates.rbegin()->first > 0)
-        {
-            m_physicalDevice = candidates.rbegin()->second;
-        }
-        else
-        {
-            throw std::runtime_error("Failed to find a suitable GPU");
-        }
+        RUNTIME_ASSERT(candidates.rbegin()->first > 0, "Failed to find a suitable GPU")
+        m_physicalDevice = candidates.rbegin()->second;
     }
 
     void VulkanEngine::InitDeviceInfos(
@@ -249,7 +279,8 @@ namespace Pepper::Core
         _deviceCreateInfo->queueCreateInfoCount = static_cast<::uint32_t>(_queueCreateInfos->size());
         _deviceCreateInfo->pQueueCreateInfos = _queueCreateInfos->data();
         _deviceCreateInfo->pEnabledFeatures = &deviceFeatures;
-        _deviceCreateInfo->enabledExtensionCount = 0;
+        _deviceCreateInfo->enabledExtensionCount = static_cast<::uint32_t>(m_deviceExtensions.size());
+        _deviceCreateInfo->ppEnabledExtensionNames = m_deviceExtensions.data();
 
 #   if PEPPER_VULKAN_VALIDATE_LAYERS
         _deviceCreateInfo->enabledLayerCount = static_cast<::uint32_t>(m_vkValidationLayers.size());
@@ -266,13 +297,13 @@ namespace Pepper::Core
         ::VkResult result;
         std::vector<::VkDeviceQueueCreateInfo> queueCreateInfos;
 
+        RUNTIME_ASSERT(indices.IsComplete(), "Failed to find suitable queue families")
+        RUNTIME_ASSERT(IsDeviceSuitable(m_physicalDevice), "Failed to find a suitable GPU")
+
         InitDeviceInfos(indices, &queueCreateInfos, &deviceCreateInfo);
 
         result = ::vkCreateDevice(m_physicalDevice, &deviceCreateInfo, nullptr, &m_device);
-        if (result != VK_SUCCESS)
-        {
-            throw std::runtime_error("Failed to create logical device");
-        }
+        RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to create logical device")
 
         ::vkGetDeviceQueue(m_device, indices.graphicsFamily.value(), 0, &m_graphicsQueue);
         ::vkGetDeviceQueue(m_device, indices.presentFamily.value(), 0, &m_presentQueue);
@@ -283,10 +314,8 @@ namespace Pepper::Core
         int result;
 
         result = ::glfwInit();
-        if (result == GLFW_FALSE)
-        {
-            throw std::runtime_error("Failed to init GLFW");
-        }
+        RUNTIME_ASSERT(result == GLFW_TRUE, "Failed to initialize GLFW")
+
         ::glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         ::glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
         //TODO: set GLFW_DECORATED to GLFW_FALSE
@@ -295,10 +324,9 @@ namespace Pepper::Core
         ::glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE);
 
         m_glWindow = ::glfwCreateWindow(_width, _height, "ZWP", nullptr, nullptr);
-        if (m_glWindow == nullptr)
-        {
-            throw std::runtime_error("Failed to create GLFW window");
-        }
+        RUNTIME_ASSERT(m_glWindow != nullptr, "Failed to create GLFW window")
+
+        m_deviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 
 #   if PEPPER_VULKAN_VALIDATE_LAYERS
         m_vkValidationLayers.emplace_back("VK_LAYER_KHRONOS_validation");
@@ -327,10 +355,7 @@ namespace Pepper::Core
 
     void *VulkanEngine::GetWindow() const
     {
-        if (m_glWindow == nullptr)
-        {
-            throw std::runtime_error("GlHandle not initialized");
-        }
+        RUNTIME_ASSERT(m_glWindow != nullptr, "Failed to get GLFW window")
         return static_cast<void *>(m_glWindow);
     }
 
