@@ -14,17 +14,27 @@
 //PLATFORM API
 #include <windows.h>
 
-namespace Pepper::Impl {
+namespace Pepper::Impl
+{
     class PEPPER_DYNAMIC_LIB Wallpaper
-            : public Pepper::Shared::Window {
+            : public Pepper::Core::Window
+    {
     private:
-        [[nodiscard]] static ::HWND GetWallpaperHandle(bool _secondRun);
+        NO_DISCARD static ::HWND GetWallpaperHandle(bool _secondRun);
 
     public:
 
         Wallpaper();
 
         ~Wallpaper();
+
+        bool ShouldClose();
+
+        void Init();
+
+        void Update();
+
+        void Shutdown() final;
     };
 }
 

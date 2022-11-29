@@ -7,6 +7,7 @@
 
 //THIS LIBRARY DEFINITIONS
 #   include "library.h"
+#   include "IEngine.h"
 
 //GLFW dependencies
 #   define GLFW_INCLUDE_VULKAN
@@ -15,76 +16,33 @@
 #   include <glfw/glfw3.h>
 #   include <GLFW/glfw3native.h>
 
-//other includes
-#   include <vector>
-#   include <optional>
-
-namespace Pepper::Shared
+namespace Pepper::Core
 {
     class PEPPER_SHARED_LIB Window
     {
     private:
         void *m_handle;
-        ::GLFWwindow *m_glWindow;
-        ::VkInstance m_vkInstance;
-        ::VkPhysicalDevice m_physicalDevice;
-        ::VkDevice m_device;
-        ::VkQueue m_graphicsQueue;
-        ::VkQueue m_presentQueue;
-        ::VkSurfaceKHR m_surface;
+        IEngine *m_engine;
 
-#   if PEPPER_VULKAN_VALIDATE_LAYERS
-
-        std::vector<const char *> m_vkValidationLayers;
-
-        void InitValidationLayers();
-
-#   endif
-
-        struct QueueFamilyIndices
-        {
-            std::optional<::uint32_t> graphicsFamily;
-            std::optional<::uint32_t> presentFamily;
-
-            [[maybe_unused]] [[nodiscard]] bool IsComplete() const
-            {
-                return graphicsFamily.has_value() && presentFamily.has_value();
-            }
-        };
-
-        [[nodiscard]] static ::uint32_t RateDeviceSuitability(::VkPhysicalDevice _device);
-
-        [[nodiscard]] QueueFamilyIndices FindQueueFamilies(::VkPhysicalDevice _device);
-
-        void InitInstanceInfos(::VkApplicationInfo *_appInfo, ::VkInstanceCreateInfo *_createInfo);
-
-        void InitInstance();
-
-        void CreateSurface();
-
-        void PickPhysicalDevice();
-
-        void InitDeviceInfos(QueueFamilyIndices _indices, ::VkDeviceCreateInfo *_deviceCreateInfo);
-
-        void CreateLogicalDevice();
+        void SetEngineInternal(IEngine *_engine);
 
     protected:
-        [[maybe_unused]] void SetWindow(void *_window);
+        MAYBE_UNUSED void SetWindow(void *_window);
 
-        [[maybe_unused]] void Init(int _width, int _height);
+        void UpdateInternal();
 
     public:
         Window();
 
         ~Window();
 
-        [[maybe_unused]] [[nodiscard]] void *GetWindow() const;
+        NO_DISCARD_UNUSED void *GetWindow() const;
 
-        [[maybe_unused]] [[nodiscard]] GLFWwindow *GetGlWindow() const;
+        void SetEngine(IEngine::EngineType _engineType);
 
-        [[maybe_unused]] void Update();
+        IEngine *GetEngine();
 
-        [[maybe_unused]] void Clear();
+        virtual void Shutdown();
     };
 }
 

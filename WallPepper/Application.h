@@ -8,7 +8,7 @@
 // dynamic library compiled from LinuxImpl or WindowsImpl
 #include <Wallpaper.h>
 
-namespace Pepper::App {
+namespace Pepper::Main {
     class Application {
     private:
         Pepper::Impl::Wallpaper *m_wp;

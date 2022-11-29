@@ -2,23 +2,33 @@
 // Created by ZoSand on 24/11/2022.
 //
 
+#include <iostream>
+#include <windows.h>
 #include "Application.h"
 
-Pepper::App::Application::Application()
-        : m_wp(nullptr) {
+Pepper::Main::Application::Application()
+        : m_wp(nullptr)
+{
 }
 
-Pepper::App::Application::~Application() = default;
+Pepper::Main::Application::~Application() = default;
 
-void Pepper::App::Application::Init() {
+void Pepper::Main::Application::Init()
+{
     m_wp = new Pepper::Impl::Wallpaper();
+    m_wp->Init();
 }
 
-void Pepper::App::Application::Run() {
-    m_wp->Update();
+void Pepper::Main::Application::Run()
+{
+    while (!m_wp->ShouldClose())
+    {
+        m_wp->Update();
+    }
 }
 
-void Pepper::App::Application::Clear() {
-    m_wp->Clear();
+void Pepper::Main::Application::Clear()
+{
+    m_wp->Shutdown();
     delete m_wp;
 }

@@ -1,23 +1,26 @@
+#include <stdexcept>
 #include <clocale>
-#include <exception>
 #include <iostream>
 
 #include "Application.h"
 
-int main() {
+int main()
+{
     //var declaration
-    Pepper::App::Application app;
+    Pepper::Main::Application app;
     int status = EXIT_SUCCESS;
 
     //init
     ::setlocale(LC_ALL, "");
     app.Init();
 
-    try {
+    try
+    {
         //run loop
         app.Run();
     }
-    catch (std::exception &_e) {
+    catch (std::runtime_error &_e)
+    {
         std::cerr << _e.what() << std::endl;
         status = EXIT_FAILURE;
     }

@@ -11,6 +11,4 @@
 #       define PEPPER_SHARED_LIB
 #   endif
 
-#include "ConstantDefinitions.h"
-
 #endif //SHARED_LIBRARY_H
