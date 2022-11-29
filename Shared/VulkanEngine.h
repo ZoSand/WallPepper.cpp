@@ -59,7 +59,10 @@ namespace Pepper::Core
 
         void InitInstanceInfos(::VkApplicationInfo *_appInfo, ::VkInstanceCreateInfo *_createInfo);
 
-        void InitDeviceInfos(QueueFamilyIndices _indices, ::VkDeviceCreateInfo *_deviceCreateInfo);
+        void InitDeviceInfos(
+                QueueFamilyIndices _indices, std::vector<::VkDeviceQueueCreateInfo> *_queueCreateInfos,
+                ::VkDeviceCreateInfo *_deviceCreateInfo
+                            );
 
         void InitInstance();
 
@@ -72,11 +75,13 @@ namespace Pepper::Core
     public:
         VulkanEngine();
 
-        ~VulkanEngine();
+        ~VulkanEngine() override;
 
         NO_DISCARD_UNUSED void *GetWindow() const override;
 
-        bool ShouldClose() override;
+        NO_DISCARD_UNUSED EngineType GetType() const override;
+
+        NO_DISCARD bool ShouldClose() override;
 
         void Init(int, int) override;
 

@@ -11,14 +11,13 @@ namespace Pepper::Core
 {
 
     Window::Window()
+            : m_engine(nullptr)
+            , m_handle(nullptr)
     {
-        m_handle = nullptr;
-        m_engine = nullptr;
     }
 
     Window::~Window()
-    {
-    }
+    = default;
 
     void Window::SetWindow(void *_window)
     {

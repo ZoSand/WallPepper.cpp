@@ -4,7 +4,7 @@
 
 #include <stdexcept>
 #include <map>
-#include <set>
+#include <set>$
 
 #include "VulkanEngine.h"
 
@@ -123,7 +123,6 @@ namespace Pepper::Core
             }
             i++;
         }
-
         if (!indices.IsComplete())
         {
             throw std::runtime_error("failed to find suitable queue families");
@@ -224,7 +223,10 @@ namespace Pepper::Core
         }
     }
 
-    void VulkanEngine::InitDeviceInfos(QueueFamilyIndices _indices, ::VkDeviceCreateInfo *_deviceCreateInfo)
+    void VulkanEngine::InitDeviceInfos(
+            QueueFamilyIndices _indices, std::vector<::VkDeviceQueueCreateInfo> *_queueCreateInfos,
+            ::VkDeviceCreateInfo *_deviceCreateInfo
+                                      )
     {
         float queuePriority = 1.0f;
         ::VkPhysicalDeviceFeatures deviceFeatures{};
@@ -232,7 +234,6 @@ namespace Pepper::Core
                 _indices.graphicsFamily.value(),
                 _indices.presentFamily.value()
         };
-        std::vector<::VkDeviceQueueCreateInfo> queueCreateInfos(queueFamilies.size());
 
         for (::uint32_t queueFamily: queueFamilies)
         {
@@ -241,12 +242,12 @@ namespace Pepper::Core
             queueCreateInfo.queueFamilyIndex = queueFamily;
             queueCreateInfo.queueCount = 1;
             queueCreateInfo.pQueuePriorities = &queuePriority;
-            queueCreateInfos.emplace_back(queueCreateInfo);
+            _queueCreateInfos->push_back(queueCreateInfo);
         }
 
         _deviceCreateInfo->sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-        _deviceCreateInfo->queueCreateInfoCount = static_cast<::uint32_t>(queueCreateInfos.size());
-        _deviceCreateInfo->pQueueCreateInfos = queueCreateInfos.data();
+        _deviceCreateInfo->queueCreateInfoCount = static_cast<::uint32_t>(_queueCreateInfos->size());
+        _deviceCreateInfo->pQueueCreateInfos = _queueCreateInfos->data();
         _deviceCreateInfo->pEnabledFeatures = &deviceFeatures;
         _deviceCreateInfo->enabledExtensionCount = 0;
 
@@ -263,8 +264,9 @@ namespace Pepper::Core
         QueueFamilyIndices indices = FindQueueFamilies(m_physicalDevice);
         ::VkDeviceCreateInfo deviceCreateInfo{};
         ::VkResult result;
+        std::vector<::VkDeviceQueueCreateInfo> queueCreateInfos;
 
-        InitDeviceInfos(indices, &deviceCreateInfo);
+        InitDeviceInfos(indices, &queueCreateInfos, &deviceCreateInfo);
 
         result = ::vkCreateDevice(m_physicalDevice, &deviceCreateInfo, nullptr, &m_device);
         if (result != VK_SUCCESS)
@@ -335,5 +337,10 @@ namespace Pepper::Core
     bool VulkanEngine::ShouldClose()
     {
         return ::glfwWindowShouldClose(m_glWindow);
+    }
+
+    IEngine::EngineType VulkanEngine::GetType() const
+    {
+        return IEngine::EngineType::Vulkan;
     }
 }

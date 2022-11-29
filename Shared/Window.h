@@ -9,13 +9,6 @@
 #   include "library.h"
 #   include "IEngine.h"
 
-//GLFW dependencies
-#   define GLFW_INCLUDE_VULKAN
-#   define GLFW_EXPOSE_NATIVE_WIN32
-
-#   include <glfw/glfw3.h>
-#   include <GLFW/glfw3native.h>
-
 namespace Pepper::Core
 {
     class PEPPER_SHARED_LIB Window

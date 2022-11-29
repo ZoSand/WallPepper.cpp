@@ -19,15 +19,19 @@ namespace Pepper::Core
             DirectX
         };
 
+        virtual ~IEngine() = default;
+
+        NO_DISCARD virtual bool ShouldClose() = 0;
+
+        NO_DISCARD_UNUSED virtual void *GetWindow() const = 0;
+
+        NO_DISCARD_UNUSED virtual EngineType GetType() const = 0;
+
         virtual void Init(int, int) = 0;
 
         virtual void Update() = 0;
 
         virtual void Shutdown() = 0;
-
-        NO_DISCARD_UNUSED virtual void *GetWindow() const = 0;
-
-        virtual bool ShouldClose() = 0;
     };
 }
 

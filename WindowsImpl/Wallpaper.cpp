@@ -50,9 +50,6 @@ namespace Pepper::Impl
     {
         ::HWND wnd = GetWallpaperHandle();
         Core::Window::SetWindow((void *) (wnd));
-        //::SetParent(
-        //        glfwGetWin32Window(static_cast<GLFWwindow *>(Core::Window::GetEngine()->GetWindow())),
-        //        wnd);
     }
 
     Wallpaper::~Wallpaper() = default;
@@ -66,8 +63,25 @@ namespace Pepper::Impl
     {
         ::RECT wndRect;
         ::GetWindowRect(static_cast<::HWND>(Core::Window::GetWindow()), &wndRect);
+        Core::IEngine *engine;
         Core::Window::SetEngine(Core::IEngine::EngineType::Vulkan);
-        Core::Window::GetEngine()->Init(wndRect.right - wndRect.left, wndRect.bottom - wndRect.top);
+        engine = Core::Window::GetEngine();
+        engine->Init(wndRect.right - wndRect.left, wndRect.bottom - wndRect.top);
+        switch (engine->GetType())
+        {
+            case Core::IEngine::EngineType::Vulkan:
+            case Core::IEngine::EngineType::OpenGL:
+            {
+                //::SetParent(
+                //        glfwGetWin32Window(static_cast<::GLFWwindow *>(engine->GetWindow())),
+                //        static_cast<::HWND>(Core::Window::GetWindow()));
+            }
+                break;
+            case Core::IEngine::EngineType::DirectX:
+                break;
+            default:
+                throw std::runtime_error("Engine type not supported");
+        }
     }
 
     void Wallpaper::Update()
@@ -79,4 +93,5 @@ namespace Pepper::Impl
     {
         Core::Window::Shutdown();
     }
+
 }
