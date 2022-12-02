@@ -38,6 +38,7 @@ namespace Pepper::Core
         ::VkExtent2D m_swapChainExtent;
 
         std::vector<::VkImage> m_swapChainImages;
+        std::vector<::VkImageView> m_swapChainImageViews;
         std::vector<const char *> m_deviceExtensions;
 
 #       if PEPPER_VULKAN_VALIDATE_LAYERS
@@ -76,11 +77,15 @@ namespace Pepper::Core
 
         NO_DISCARD SwapChainSupportDetails QuerySwapChainSupport(::VkPhysicalDevice _device);
 
-        static VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats);
+        NO_DISCARD static VkSurfaceFormatKHR ChooseSwapSurfaceFormat(
+                const std::vector<VkSurfaceFormatKHR>
+                &availableFormats
+                                                                    );
 
-        static ::VkPresentModeKHR ChooseSwapPresentMode(std::vector<VkPresentModeKHR> _availableModes);
+        NO_DISCARD static ::VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>&
+                _availableModes);
 
-        ::VkExtent2D ChooseSwapExtent(::VkSurfaceCapabilitiesKHR _capabilities);
+        NO_DISCARD ::VkExtent2D ChooseSwapExtent(::VkSurfaceCapabilitiesKHR _capabilities);
 
         void InitInstanceInfos(::VkApplicationInfo *_appInfo, ::VkInstanceCreateInfo *_createInfo);
 
@@ -94,6 +99,13 @@ namespace Pepper::Core
                 ::VkSwapchainCreateInfoKHR *_swapChainCreateInfo
                                );
 
+        void InitImageViewInfos(
+                ::VkImageViewCreateInfo *_imageViewCreateInfo,
+                ::VkImage _swapChainImage
+                               );
+
+        static std::vector<char> ReadShaderFile(const std::string& filename);
+
         void InitInstance();
 
         void CreateSurface();
@@ -103,6 +115,10 @@ namespace Pepper::Core
         void CreateLogicalDevice();
 
         void CreateSwapChain();
+
+        void CreateImageViews();
+
+        void CreateGraphicsPipeline();
 
     public:
         VulkanEngine();

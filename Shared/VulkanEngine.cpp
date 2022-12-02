@@ -3,6 +3,7 @@
 //
 
 #include <stdexcept>
+#include <fstream>
 #include <limits>
 #include <cstdint>
 #include <algorithm>
@@ -211,7 +212,7 @@ namespace Pepper::Core
         return _availableFormats[0];
     }
 
-    ::VkPresentModeKHR VulkanEngine::ChooseSwapPresentMode(std::vector<VkPresentModeKHR> _availableModes)
+    ::VkPresentModeKHR VulkanEngine::ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& _availableModes)
     {
         for (const auto &availableMode: _availableModes)
         {
@@ -273,6 +274,22 @@ namespace Pepper::Core
 #   else //else we disable them
         _createInfo->enabledLayerCount = 0;
 #   endif
+    }
+
+    std::vector<char> VulkanEngine::ReadShaderFile(const std::string &filename)
+    {
+        std::ifstream file(filename, std::ios::ate | std::ios::binary);
+        long long fileSize;
+        std::vector<char> buffer(0);
+        RUNTIME_ASSERT(file.is_open(), "Failed to open shader file")
+
+        fileSize = static_cast<long long>(file.tellg());
+        buffer.resize(fileSize);
+        file.seekg(0);
+        file.read(buffer.data(), fileSize);
+
+        file.close();
+        return buffer;
     }
 
     void VulkanEngine::InitInstance()
@@ -411,6 +428,26 @@ namespace Pepper::Core
         m_swapChainImageFormat = surfaceFormat.format;
     }
 
+
+    void VulkanEngine::InitImageViewInfos(
+            ::VkImageViewCreateInfo *_imageViewCreateInfo, ::VkImage _swapChainImage
+                                         )
+    {
+        _imageViewCreateInfo->sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        _imageViewCreateInfo->image = _swapChainImage;
+        _imageViewCreateInfo->viewType = VK_IMAGE_VIEW_TYPE_2D;
+        _imageViewCreateInfo->format = m_swapChainImageFormat;
+        _imageViewCreateInfo->components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+        _imageViewCreateInfo->components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+        _imageViewCreateInfo->components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+        _imageViewCreateInfo->components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+        _imageViewCreateInfo->subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        _imageViewCreateInfo->subresourceRange.baseMipLevel = 0;
+        _imageViewCreateInfo->subresourceRange.levelCount = 1;
+        _imageViewCreateInfo->subresourceRange.baseArrayLayer = 0;
+        _imageViewCreateInfo->subresourceRange.layerCount = 1;
+    }
+
     void VulkanEngine::CreateLogicalDevice()
     {
         QueueFamilyIndices indices = FindQueueFamilies(m_physicalDevice);
@@ -450,6 +487,28 @@ namespace Pepper::Core
         RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to get swap chain images")
     }
 
+    void VulkanEngine::CreateImageViews()
+    {
+        m_swapChainImageViews.resize(m_swapChainImages.size());
+
+        for (::size_t i = 0; i < m_swapChainImages.size(); i++)
+        {
+            ::VkImageViewCreateInfo createInfo{};
+            ::VkResult result;
+
+            InitImageViewInfos(&createInfo, m_swapChainImages[i]);
+
+            result = ::vkCreateImageView(m_device, &createInfo, nullptr, &m_swapChainImageViews[i]);
+            RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to create image views")
+        }
+    }
+
+    void VulkanEngine::CreateGraphicsPipeline()
+    {
+        auto vertShaderCode = ReadShaderFile("Shaders/shader.vert.spv");
+        auto fragShaderCode = ReadShaderFile("Shaders/shader.frag.spv");
+    }
+
     void VulkanEngine::Init(int _width, int _height)
     {
         int result;
@@ -479,6 +538,8 @@ namespace Pepper::Core
         PickPhysicalDevice();
         CreateLogicalDevice();
         CreateSwapChain();
+        CreateImageViews();
+        CreateGraphicsPipeline();
     }
 
     void VulkanEngine::Update()
@@ -488,6 +549,10 @@ namespace Pepper::Core
 
     void VulkanEngine::Shutdown()
     {
+        for (auto &imageView: m_swapChainImageViews)
+        {
+            ::vkDestroyImageView(m_device, imageView, nullptr);
+        }
         ::vkDestroySwapchainKHR(m_device, m_swapChain, nullptr);
         ::vkDestroyDevice(m_device, nullptr);
         ::vkDestroySurfaceKHR(m_vkInstance, m_surface, nullptr);
