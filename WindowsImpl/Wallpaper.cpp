@@ -11,10 +11,7 @@ namespace Pepper::Impl
     ::HWND Wallpaper::GetWallpaperHandle(bool _secondRun = false)
     {
         ::HWND handle = ::FindWindow(L"Progman", nullptr);
-        if (handle == nullptr)
-        {
-            throw std::runtime_error("Unable to find Progman");
-        }
+        RUNTIME_ASSERT(handle != nullptr, "Failed to locate Progman window")
 
         (void) ::SendMessage(handle, 0x052C, 0xD, 0);
         (void) ::SendMessage(handle, 0x052C, 0xD, 1);
@@ -27,7 +24,7 @@ namespace Pepper::Impl
                           {
                               auto *hnd = reinterpret_cast<::HWND *>(_lParam);
                               *hnd = ::FindWindowEx(nullptr, _hWnd, L"WorkerW", nullptr);
-                              _lParam = reinterpret_cast<::LPARAM>(*hnd); //Don't remove this line event if IDE says it's useless
+                              _lParam = reinterpret_cast<::LPARAM>(*hnd); //Don't remove this line even if IDE says it's useless
                               if (*hnd != nullptr)
                               {
                                   return FALSE;

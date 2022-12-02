@@ -33,7 +33,12 @@ namespace Pepper::Core
         ::VkQueue m_graphicsQueue;
         ::VkQueue m_presentQueue;
         ::VkSurfaceKHR m_surface;
-        std::vector<const char*> m_deviceExtensions;
+        ::VkSwapchainKHR m_swapChain;
+        ::VkFormat m_swapChainImageFormat;
+        ::VkExtent2D m_swapChainExtent;
+
+        std::vector<::VkImage> m_swapChainImages;
+        std::vector<const char *> m_deviceExtensions;
 
 #       if PEPPER_VULKAN_VALIDATE_LAYERS
 
@@ -61,6 +66,8 @@ namespace Pepper::Core
             std::vector<::VkPresentModeKHR> presentModes;
         };
 
+        NO_DISCARD bool CheckExtensionSupport(::VkPhysicalDevice device) const;
+
         NO_DISCARD bool IsDeviceSuitable(::VkPhysicalDevice _device);
 
         NO_DISCARD static ::uint32_t RateDeviceSuitability(::VkPhysicalDevice _device);
@@ -69,12 +76,23 @@ namespace Pepper::Core
 
         NO_DISCARD SwapChainSupportDetails QuerySwapChainSupport(::VkPhysicalDevice _device);
 
+        static VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats);
+
+        static ::VkPresentModeKHR ChooseSwapPresentMode(std::vector<VkPresentModeKHR> _availableModes);
+
+        ::VkExtent2D ChooseSwapExtent(::VkSurfaceCapabilitiesKHR _capabilities);
+
         void InitInstanceInfos(::VkApplicationInfo *_appInfo, ::VkInstanceCreateInfo *_createInfo);
 
         void InitDeviceInfos(
                 QueueFamilyIndices _indices, std::vector<::VkDeviceQueueCreateInfo> *_queueCreateInfos,
                 ::VkDeviceCreateInfo *_deviceCreateInfo
                             );
+
+        void InitSwapChainInfos(
+                const VulkanEngine::SwapChainSupportDetails &_swapChainSupport,
+                ::VkSwapchainCreateInfoKHR *_swapChainCreateInfo
+                               );
 
         void InitInstance();
 
@@ -83,6 +101,8 @@ namespace Pepper::Core
         void PickPhysicalDevice();
 
         void CreateLogicalDevice();
+
+        void CreateSwapChain();
 
     public:
         VulkanEngine();
@@ -100,7 +120,6 @@ namespace Pepper::Core
         void Update() override;
 
         void Shutdown() override;
-
     };
 }
 
