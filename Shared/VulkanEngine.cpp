@@ -31,9 +31,14 @@ namespace Pepper::Core
 			, m_renderPass(VK_NULL_HANDLE)
 			, m_pipelineLayout(VK_NULL_HANDLE)
 			, m_graphicsPipeline(VK_NULL_HANDLE)
+			, m_commandPool(VK_NULL_HANDLE)
+			, m_commandBuffer(VK_NULL_HANDLE)
 			, m_deviceExtensions({
 					                     VK_KHR_SWAPCHAIN_EXTENSION_NAME
 			                     })
+			, m_swapChainImages()
+			, m_swapChainImageViews()
+			, m_swapChainFramebuffers()
 #   if PEPPER_VULKAN_VALIDATE_LAYERS
 			, m_vkValidationLayers({
 					                       "VK_LAYER_KHRONOS_validation"
@@ -807,6 +812,35 @@ namespace Pepper::Core
 		}
 	}
 
+	void VulkanEngine::CreateCommandPool()
+	{
+		::VkResult result;
+		::VkCommandPoolCreateInfo poolInfo { };
+		QueueFamilyIndices queueFamilyIndices = FindQueueFamilies(m_physicalDevice, m_surface);
+
+		poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+		poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT; // Optional
+		poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
+
+		result = vkCreateCommandPool(m_device, &poolInfo, nullptr, &m_commandPool);
+		RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to create command pool.")
+	}
+
+	void VulkanEngine::CreateCommandBuffer()
+	{
+		::VkCommandBufferAllocateInfo allocInfo { };
+		::VkResult result;
+
+		//TODO: move this to a separate function
+		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+		allocInfo.commandPool = m_commandPool;
+		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+		allocInfo.commandBufferCount = 1;
+
+		result = vkAllocateCommandBuffers(m_device, &allocInfo, &m_commandBuffer);
+		RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to allocate command buffer.")
+	}
+
 	void VulkanEngine::Init(
 			int _width,
 			int _height
@@ -840,6 +874,8 @@ namespace Pepper::Core
 		CreateRenderPass();
 		CreateGraphicsPipeline();
 		CreateFramebuffers();
+		CreateCommandPool();
+		CreateCommandBuffer();
 	}
 
 	void VulkanEngine::Update()
@@ -849,6 +885,7 @@ namespace Pepper::Core
 
 	void VulkanEngine::Shutdown()
 	{
+		::vkDestroyCommandPool(m_device, m_commandPool, nullptr);
 		for (auto framebuffer: m_swapChainFramebuffers)
 		{
 			::vkDestroyFramebuffer(m_device, framebuffer, nullptr);
