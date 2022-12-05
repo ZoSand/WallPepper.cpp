@@ -26,7 +26,7 @@ namespace Pepper::Core
     class PEPPER_SHARED_LIB VulkanEngine : public IEngine
     {
     private:
-#pragma region VulkanEngine::Private::Members
+#pragma region Members
         ::GLFWwindow *m_glWindow;
         ::VkInstance m_vkInstance;
         ::VkPhysicalDevice m_physicalDevice;
@@ -51,9 +51,9 @@ namespace Pepper::Core
 
 #   endif
 
-#pragma endregion VulkanEngine::Private::Members
+#pragma endregion Members
 
-#pragma region VulkanEngine::privates::StructuresDefinitions
+#pragma region Structures Definitions
 
         struct QueueFamilyIndices
         {
@@ -72,9 +72,9 @@ namespace Pepper::Core
             std::vector<::VkSurfaceFormatKHR> formats;
             std::vector<::VkPresentModeKHR> presentModes;
         };
-#pragma region VulkanEngine::privates::StructuresDefinitions
+#pragma endregion Structures Definitions
 
-#pragma region VulkanEngine::privates::Statics
+#pragma region Utils
 
         NO_DISCARD static bool CheckExtensionSupport(
                 ::VkPhysicalDevice _device,
@@ -123,9 +123,9 @@ namespace Pepper::Core
                 ::VkDevice _device
                                                              );
 
-#pragma endregion VulkanEngine::privates::Statics
+#pragma endregion Utils
 
-#pragma region VulkanEngine::privates::InfoInitializers
+#pragma region Info Initializers
 
         static void InitShaderStageInfos(
                 ::VkPipelineShaderStageCreateInfo *_pipelineInfo,
@@ -171,9 +171,9 @@ namespace Pepper::Core
                 ::VkFormat _swapChainImageFormat
                                        );
 
-#pragma endregion VulkanEngine::privates::InfoInitializers
+#pragma endregion Info Initializers
 
-#pragma region VulkanEngine::privates::InstanceInitializers
+#pragma region Instance Initializers
 
 #   if PEPPER_VULKAN_VALIDATE_LAYERS
 
@@ -197,7 +197,7 @@ namespace Pepper::Core
 
         void CreateGraphicsPipeline();
 
-#pragma endregion VulkanEngine::privates::InstanceInitializers
+#pragma endregion Instance Initializers
 
     public:
         VulkanEngine();
