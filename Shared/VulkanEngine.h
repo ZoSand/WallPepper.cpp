@@ -60,7 +60,7 @@ namespace Pepper::Core
             std::optional<::uint32_t> graphicsFamily;
             std::optional<::uint32_t> presentFamily;
 
-            NO_DISCARD_UNUSED bool IsComplete() const
+            NO_DISCARD_UNUSED inline bool IsComplete() const
             {
                 return graphicsFamily.has_value() && presentFamily.has_value();
             }
@@ -72,6 +72,7 @@ namespace Pepper::Core
             std::vector<::VkSurfaceFormatKHR> formats;
             std::vector<::VkPresentModeKHR> presentModes;
         };
+
 #pragma endregion Structures Definitions
 
 #pragma region Utils
@@ -137,7 +138,7 @@ namespace Pepper::Core
                 ::VkApplicationInfo *_appInfo,
                 ::VkInstanceCreateInfo *_createInfo,
                 const std::vector<const char *> &_validationLayers = {}
-                              );
+                                     );
 
         static void InitDeviceInfos(
                 QueueFamilyIndices _indices,
@@ -145,10 +146,10 @@ namespace Pepper::Core
                 ::VkDeviceCreateInfo *_deviceCreateInfo,
                 const std::vector<const char *> &_deviceExtensions,
                 const std::vector<const char *> &_validationLayers = {}
-                            );
+                                   );
 
         static void InitSwapChainInfos(
-                const VulkanEngine::SwapChainSupportDetails &_swapChainSupport,
+                const SwapChainSupportDetails &_swapChainSupport,
                 ::VkSwapchainCreateInfoKHR *_swapChainCreateInfo,
                 ::GLFWwindow *_glWindow,
                 ::VkPhysicalDevice _physicalDevice,
