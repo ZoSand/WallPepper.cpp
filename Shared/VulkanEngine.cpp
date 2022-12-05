@@ -535,8 +535,8 @@ namespace Pepper::Core
         ::VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
         ::VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
 
-        auto vertShaderCode = ReadShaderFile("./Shaders/shader.vert.spv");
-        auto fragShaderCode = ReadShaderFile("./Shaders/shader.frag.spv");
+        std::vector<char> vertShaderCode = ReadShaderFile("./Shaders/shader.vert.spv");
+        std::vector<char> fragShaderCode = ReadShaderFile("./Shaders/shader.frag.spv");
 
         ::VkShaderModule vertShaderModule = CreateShaderModule(vertShaderCode, m_device);
         ::VkShaderModule fragShaderModule = CreateShaderModule(fragShaderCode, m_device);
@@ -546,8 +546,106 @@ namespace Pepper::Core
                 fragShaderStageInfo
         };
 
+        ::VkResult result;
+
         InitShaderStageInfos(&vertShaderStageInfo, vertShaderModule, VK_SHADER_STAGE_VERTEX_BIT);
         InitShaderStageInfos(&fragShaderStageInfo, fragShaderModule, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+        //TODO: move this to a separate function
+        ::VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
+        vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+        vertexInputInfo.vertexBindingDescriptionCount = 0;
+        vertexInputInfo.pVertexBindingDescriptions = nullptr; // Optional
+        vertexInputInfo.vertexAttributeDescriptionCount = 0;
+        vertexInputInfo.pVertexAttributeDescriptions = nullptr; // Optional
+
+        //TODO: move this to a separate function
+        ::VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
+        inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+        inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+        inputAssembly.primitiveRestartEnable = VK_FALSE;
+
+        //TODO: move this to a separate function
+        ::VkViewport viewport{};
+        viewport.x = 0.0f;
+        viewport.y = 0.0f;
+        viewport.width = (float) m_swapChainExtent.width;
+        viewport.height = (float) m_swapChainExtent.height;
+        viewport.minDepth = 0.0f;
+        viewport.maxDepth = 1.0f;
+
+        //TODO: move this to a separate function
+        ::VkRect2D scissor{};
+        scissor.offset = {0, 0};
+        scissor.extent = m_swapChainExtent;
+
+        //TODO: dynamic states
+
+        //TODO: move this to a separate function
+        ::VkPipelineViewportStateCreateInfo viewportState{};
+        viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+        viewportState.viewportCount = 1;
+        viewportState.pViewports = &viewport;
+        viewportState.scissorCount = 1;
+        viewportState.pScissors = &scissor;
+
+        //TODO: move this to a separate function
+        ::VkPipelineRasterizationStateCreateInfo rasterizer{};
+        rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+        rasterizer.depthClampEnable = VK_FALSE;
+        rasterizer.rasterizerDiscardEnable = VK_FALSE;
+        rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
+        rasterizer.lineWidth = 1.0f;
+        rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
+        rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+        rasterizer.depthBiasEnable = VK_FALSE;
+        rasterizer.depthBiasConstantFactor = 0.0f; // Optional
+        rasterizer.depthBiasClamp = 0.0f; // Optional
+        rasterizer.depthBiasSlopeFactor = 0.0f; // Optional
+
+        //TODO: move this to a separate function
+        ::VkPipelineMultisampleStateCreateInfo multisampling{};
+        multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+        multisampling.sampleShadingEnable = VK_FALSE;
+        multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+        multisampling.minSampleShading = 1.0f; // Optional
+        multisampling.pSampleMask = nullptr; // Optional
+        multisampling.alphaToCoverageEnable = VK_FALSE; // Optional
+        multisampling.alphaToOneEnable = VK_FALSE; // Optional
+
+        //TODO: move this to a separate function
+        ::VkPipelineColorBlendAttachmentState colorBlendAttachment{};
+        colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+        colorBlendAttachment.blendEnable = VK_FALSE;
+        colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE; // Optional
+        colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO; // Optional
+        colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD; // Optional
+        colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE; // Optional
+        colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO; // Optional
+        colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD; // Optional
+
+        //TODO: move this to a separate function
+        ::VkPipelineColorBlendStateCreateInfo colorBlending{};
+        colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+        colorBlending.logicOpEnable = VK_FALSE;
+        colorBlending.logicOp = VK_LOGIC_OP_COPY; // Optional
+        colorBlending.attachmentCount = 1;
+        colorBlending.pAttachments = &colorBlendAttachment;
+        colorBlending.blendConstants[0] = 0.0f; // Optional
+        colorBlending.blendConstants[1] = 0.0f; // Optional
+        colorBlending.blendConstants[2] = 0.0f; // Optional
+        colorBlending.blendConstants[3] = 0.0f; // Optional
+
+        //TODO: move this to a separate function
+        ::VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
+        pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+        pipelineLayoutInfo.setLayoutCount = 0; // Optional
+        pipelineLayoutInfo.pSetLayouts = nullptr; // Optional
+        pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
+        pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
+
+        result = vkCreatePipelineLayout(m_device, &pipelineLayoutInfo, nullptr, &m_pipelineLayout);
+        RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to create pipeline layout.")
 
         ::vkDestroyShaderModule(m_device, fragShaderModule, nullptr);
         ::vkDestroyShaderModule(m_device, vertShaderModule, nullptr);
@@ -558,7 +656,7 @@ namespace Pepper::Core
         int result;
 
         result = ::glfwInit();
-        RUNTIME_ASSERT(result == GLFW_TRUE, "Failed to initialize GLFW")
+        RUNTIME_ASSERT(result == GLFW_TRUE, "Failed to initialize GLFW.")
 
         ::glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         ::glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
@@ -568,7 +666,7 @@ namespace Pepper::Core
         ::glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE);
 
         m_glWindow = ::glfwCreateWindow(_width, _height, "ZWP", nullptr, nullptr);
-        RUNTIME_ASSERT(m_glWindow != nullptr, "Failed to create GLFW window")
+        RUNTIME_ASSERT(m_glWindow != nullptr, "Failed to create GLFW window.")
 
         m_deviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 
@@ -593,6 +691,7 @@ namespace Pepper::Core
 
     void VulkanEngine::Shutdown()
     {
+        ::vkDestroyPipelineLayout(m_device, m_pipelineLayout, nullptr);
         for (auto &imageView: m_swapChainImageViews)
         {
             ::vkDestroyImageView(m_device, imageView, nullptr);
@@ -607,19 +706,19 @@ namespace Pepper::Core
 
     void *VulkanEngine::GetWindow() const
     {
-        RUNTIME_ASSERT(m_glWindow != nullptr, "Failed to get GLFW window")
+        RUNTIME_ASSERT(m_glWindow != nullptr, "Failed to get GLFW window. Engine not initialized?")
         return static_cast<void *>(m_glWindow);
     }
 
     bool VulkanEngine::ShouldClose()
     {
-        RUNTIME_ASSERT(m_glWindow != nullptr, "Failed to get GLFW window")
+        RUNTIME_ASSERT(m_glWindow != nullptr, "Failed to get GLFW window. Engine not initialized?")
         return ::glfwWindowShouldClose(m_glWindow);
     }
 
     IEngine::EngineType VulkanEngine::GetType() const
     {
-        RUNTIME_ASSERT(m_glWindow != nullptr, "Engine is not initialized")
+        RUNTIME_ASSERT(m_glWindow != nullptr, "Failed to get window. Is Engine initialized?")
         return IEngine::EngineType::Vulkan;
     }
 }

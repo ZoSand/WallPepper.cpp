@@ -36,6 +36,7 @@ namespace Pepper::Core
         ::VkSwapchainKHR m_swapChain;
         ::VkFormat m_swapChainImageFormat;
         ::VkExtent2D m_swapChainExtent;
+        ::VkPipelineLayout m_pipelineLayout;
 
         std::vector<::VkImage> m_swapChainImages;
         std::vector<::VkImageView> m_swapChainImageViews;
