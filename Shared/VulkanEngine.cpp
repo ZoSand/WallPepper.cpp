@@ -28,8 +28,16 @@ namespace Pepper::Core
                                         0,
                                         0
                                 })
+            , m_renderPass(VK_NULL_HANDLE)
+            , m_pipelineLayout(VK_NULL_HANDLE)
+            , m_graphicsPipeline(VK_NULL_HANDLE)
+            , m_deviceExtensions({
+                                         VK_KHR_SWAPCHAIN_EXTENSION_NAME
+                                 })
 #   if PEPPER_VULKAN_VALIDATE_LAYERS
-            , m_vkValidationLayers()
+            , m_vkValidationLayers({
+                                           "VK_LAYER_KHRONOS_validation"
+                                   })
 #   endif
     {}
 
@@ -577,16 +585,16 @@ namespace Pepper::Core
         ::VkShaderModule vertShaderModule = CreateShaderModule(vertShaderCode, m_device);
         ::VkShaderModule fragShaderModule = CreateShaderModule(fragShaderCode, m_device);
 
-        ::VkPipelineShaderStageCreateInfo shaderStages[] = {
-                vertShaderStageInfo,
-                fragShaderStageInfo
-        };
 
         ::VkResult result;
 
         InitShaderStageInfos(&vertShaderStageInfo, vertShaderModule, VK_SHADER_STAGE_VERTEX_BIT);
         InitShaderStageInfos(&fragShaderStageInfo, fragShaderModule, VK_SHADER_STAGE_FRAGMENT_BIT);
 
+        ::VkPipelineShaderStageCreateInfo shaderStages[] = {
+                vertShaderStageInfo,
+                fragShaderStageInfo
+        };
         //TODO: move this to a separate function
         ::VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
         vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -688,6 +696,27 @@ namespace Pepper::Core
         result = vkCreatePipelineLayout(m_device, &pipelineLayoutInfo, nullptr, &m_pipelineLayout);
         RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to create pipeline layout.")
 
+        ::VkGraphicsPipelineCreateInfo pipelineInfo{};
+        pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+        pipelineInfo.stageCount = 2;
+        pipelineInfo.pStages = shaderStages;
+        pipelineInfo.pVertexInputState = &vertexInputInfo;
+        pipelineInfo.pInputAssemblyState = &inputAssembly;
+        pipelineInfo.pViewportState = &viewportState;
+        pipelineInfo.pRasterizationState = &rasterizer;
+        pipelineInfo.pMultisampleState = &multisampling;
+        pipelineInfo.pDepthStencilState = nullptr; // Optional
+        pipelineInfo.pColorBlendState = &colorBlending;
+        pipelineInfo.pDynamicState = nullptr; // Optional
+        pipelineInfo.layout = m_pipelineLayout;
+        pipelineInfo.renderPass = m_renderPass;
+        pipelineInfo.subpass = 0;
+        pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
+        pipelineInfo.basePipelineIndex = -1; // Optional
+
+        result = vkCreateGraphicsPipelines(m_device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_graphicsPipeline);
+        RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to create graphics pipeline.")
+
         ::vkDestroyShaderModule(m_device, fragShaderModule, nullptr);
         ::vkDestroyShaderModule(m_device, vertShaderModule, nullptr);
     }
@@ -709,10 +738,7 @@ namespace Pepper::Core
         m_glWindow = ::glfwCreateWindow(_width, _height, "ZWP", nullptr, nullptr);
         RUNTIME_ASSERT(m_glWindow != nullptr, "Failed to create GLFW window.")
 
-        m_deviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
-
 #   if PEPPER_VULKAN_VALIDATE_LAYERS
-        m_vkValidationLayers.emplace_back("VK_LAYER_KHRONOS_validation");
         InitValidationLayers();
 #   endif
 
@@ -733,6 +759,7 @@ namespace Pepper::Core
 
     void VulkanEngine::Shutdown()
     {
+        ::vkDestroyPipeline(m_device, m_graphicsPipeline, nullptr);
         ::vkDestroyPipelineLayout(m_device, m_pipelineLayout, nullptr);
         ::vkDestroyRenderPass(m_device, m_renderPass, nullptr);
         for (auto &imageView: m_swapChainImageViews)

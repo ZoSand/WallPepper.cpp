@@ -38,6 +38,7 @@ namespace Pepper::Core
         ::VkExtent2D m_swapChainExtent;
         ::VkRenderPass m_renderPass;
         ::VkPipelineLayout m_pipelineLayout;
+        ::VkPipeline m_graphicsPipeline;
 
         std::vector<::VkImage> m_swapChainImages;
         std::vector<::VkImageView> m_swapChainImageViews;
