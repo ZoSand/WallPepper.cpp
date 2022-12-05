@@ -36,6 +36,7 @@ namespace Pepper::Core
         ::VkSwapchainKHR m_swapChain;
         ::VkFormat m_swapChainImageFormat;
         ::VkExtent2D m_swapChainExtent;
+        ::VkRenderPass m_renderPass;
         ::VkPipelineLayout m_pipelineLayout;
 
         std::vector<::VkImage> m_swapChainImages;
@@ -124,6 +125,8 @@ namespace Pepper::Core
         void CreateSwapChain();
 
         void CreateImageViews();
+
+        void CreateRenderPass();
 
         void CreateGraphicsPipeline();
 

@@ -530,6 +530,42 @@ namespace Pepper::Core
         }
     }
 
+    void VulkanEngine::CreateRenderPass()
+    {
+        ::VkResult result;
+        //TODO: move to separate function
+        ::VkAttachmentDescription colorAttachment{};
+        colorAttachment.format = m_swapChainImageFormat;
+        colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+        colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+        //TODO: move to separate function
+        ::VkAttachmentReference colorAttachmentRef{};
+        colorAttachmentRef.attachment = 0;
+        colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+        //TODO: move to separate function
+        ::VkSubpassDescription subpass{};
+        subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+        subpass.colorAttachmentCount = 1;
+        subpass.pColorAttachments = &colorAttachmentRef;
+
+        ::VkRenderPassCreateInfo renderPassInfo{};
+        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+        renderPassInfo.attachmentCount = 1;
+        renderPassInfo.pAttachments = &colorAttachment;
+        renderPassInfo.subpassCount = 1;
+        renderPassInfo.pSubpasses = &subpass;
+
+        result = ::vkCreateRenderPass(m_device, &renderPassInfo, nullptr, &m_renderPass);
+        RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to create render pass.")
+    }
+
     void VulkanEngine::CreateGraphicsPipeline()
     {
         ::VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
@@ -576,7 +612,10 @@ namespace Pepper::Core
 
         //TODO: move this to a separate function
         ::VkRect2D scissor{};
-        scissor.offset = {0, 0};
+        scissor.offset = {
+                0,
+                0
+        };
         scissor.extent = m_swapChainExtent;
 
         //TODO: dynamic states
@@ -615,7 +654,9 @@ namespace Pepper::Core
 
         //TODO: move this to a separate function
         ::VkPipelineColorBlendAttachmentState colorBlendAttachment{};
-        colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+        colorBlendAttachment.colorWriteMask =
+                VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT
+                        | VK_COLOR_COMPONENT_A_BIT;
         colorBlendAttachment.blendEnable = VK_FALSE;
         colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE; // Optional
         colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO; // Optional
@@ -681,6 +722,7 @@ namespace Pepper::Core
         CreateLogicalDevice();
         CreateSwapChain();
         CreateImageViews();
+        CreateRenderPass();
         CreateGraphicsPipeline();
     }
 
@@ -692,6 +734,7 @@ namespace Pepper::Core
     void VulkanEngine::Shutdown()
     {
         ::vkDestroyPipelineLayout(m_device, m_pipelineLayout, nullptr);
+        ::vkDestroyRenderPass(m_device, m_renderPass, nullptr);
         for (auto &imageView: m_swapChainImageViews)
         {
             ::vkDestroyImageView(m_device, imageView, nullptr);
