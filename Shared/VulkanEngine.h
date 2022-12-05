@@ -26,6 +26,7 @@ namespace Pepper::Core
     class PEPPER_SHARED_LIB VulkanEngine : public IEngine
     {
     private:
+#pragma region VulkanEngine::Private::Members
         ::GLFWwindow *m_glWindow;
         ::VkInstance m_vkInstance;
         ::VkPhysicalDevice m_physicalDevice;
@@ -48,9 +49,11 @@ namespace Pepper::Core
 
         std::vector<const char *> m_vkValidationLayers;
 
-        void InitValidationLayers();
-
 #       endif
+
+#pragma endregion VulkanEngine::Private::Members
+
+#pragma region VulkanEngine::privates::StructuresDefinitions
 
         struct QueueFamilyIndices
         {
@@ -69,51 +72,111 @@ namespace Pepper::Core
             std::vector<::VkSurfaceFormatKHR> formats;
             std::vector<::VkPresentModeKHR> presentModes;
         };
+#pragma region VulkanEngine::privates::StructuresDefinitions
 
-        NO_DISCARD bool CheckExtensionSupport(::VkPhysicalDevice device) const;
+#pragma region VulkanEngine::privates::Statics
 
-        NO_DISCARD bool IsDeviceSuitable(::VkPhysicalDevice _device);
+        NO_DISCARD static bool CheckExtensionSupport(
+                ::VkPhysicalDevice _device,
+                const std::vector<const char *> &_requiredExtensions
+                                                    );
 
-        NO_DISCARD static ::uint32_t RateDeviceSuitability(::VkPhysicalDevice _device);
+        NO_DISCARD static bool IsDeviceSuitable(
+                ::VkPhysicalDevice _device,
+                const std::vector<const char *> &_requiredExtensions,
+                ::VkSurfaceKHR _surface
+                                               );
 
-        NO_DISCARD QueueFamilyIndices FindQueueFamilies(::VkPhysicalDevice _device);
+        NO_DISCARD static ::uint32_t RateDeviceSuitability(
+                ::VkPhysicalDevice _device
+                                                          );
 
-        NO_DISCARD SwapChainSupportDetails QuerySwapChainSupport(::VkPhysicalDevice _device);
+        NO_DISCARD static QueueFamilyIndices FindQueueFamilies(
+                ::VkPhysicalDevice _device,
+                ::VkSurfaceKHR _surface
+                                                              );
+
+        NO_DISCARD static SwapChainSupportDetails QuerySwapChainSupport(
+                ::VkPhysicalDevice _device,
+                ::VkSurfaceKHR _surface
+                                                                       );
 
         NO_DISCARD static VkSurfaceFormatKHR ChooseSwapSurfaceFormat(
-                const std::vector<VkSurfaceFormatKHR>
-                &availableFormats
+                const std::vector<VkSurfaceFormatKHR> &availableFormats
                                                                     );
 
         NO_DISCARD static ::VkPresentModeKHR ChooseSwapPresentMode(
-                const std::vector<VkPresentModeKHR> &
-                _availableModes
+                const std::vector<VkPresentModeKHR> &_availableModes
                                                                   );
 
-        NO_DISCARD ::VkExtent2D ChooseSwapExtent(::VkSurfaceCapabilitiesKHR _capabilities);
+        NO_DISCARD static ::VkExtent2D ChooseSwapExtent(
+                ::VkSurfaceCapabilitiesKHR _capabilities,
+                ::GLFWwindow *_window
+                                                       );
 
-        void InitInstanceInfos(::VkApplicationInfo *_appInfo, ::VkInstanceCreateInfo *_createInfo);
+        NO_DISCARD static std::vector<char> ReadShaderFile(
+                const std::string &filename
+                                                          );
+
+        NO_DISCARD static ::VkShaderModule CreateShaderModule(
+                const std::vector<char> &_code,
+                ::VkDevice _device
+                                                             );
+
+#pragma endregion VulkanEngine::privates::Statics
+
+#pragma region VulkanEngine::privates::InfoInitializers
+
+        static void InitShaderStageInfos(
+                ::VkPipelineShaderStageCreateInfo *_pipelineInfo,
+                ::VkShaderModule _shaderModule,
+                ::VkShaderStageFlagBits _stage
+                                        );
+
+        void InitInstanceInfos(
+                ::VkApplicationInfo *_appInfo,
+                ::VkInstanceCreateInfo *_createInfo
+                              );
 
         void InitDeviceInfos(
-                QueueFamilyIndices _indices, std::vector<::VkDeviceQueueCreateInfo> *_queueCreateInfos,
+                QueueFamilyIndices _indices,
+                std::vector<::VkDeviceQueueCreateInfo> *_queueCreateInfos,
                 ::VkDeviceCreateInfo *_deviceCreateInfo
                             );
 
-        void InitSwapChainInfos(
+        static void InitSwapChainInfos(
                 const VulkanEngine::SwapChainSupportDetails &_swapChainSupport,
-                ::VkSwapchainCreateInfoKHR *_swapChainCreateInfo
-                               );
+                ::VkSwapchainCreateInfoKHR *_swapChainCreateInfo,
+                ::GLFWwindow *_glWindow,
+                ::VkPhysicalDevice _physicalDevice,
+                ::VkSurfaceKHR _surface,
+                ::VkExtent2D &_extent,
+                ::VkFormat &_imageFormat
+                                      );
 
-        void InitImageViewInfos(
+        static void InitImageViewInfos(
                 ::VkImageViewCreateInfo *_imageViewCreateInfo,
-                ::VkImage _swapChainImage
-                               );
+                ::VkImage _swapChainImage,
+                ::VkFormat _swapChainImageFormat
+                                      );
 
-        static std::vector<char> ReadShaderFile(const std::string &filename);
+        static void InitRenderPassInfos(
+                ::VkAttachmentDescription *_colorAttachment,
+                ::VkAttachmentReference *_colorAttachmentRef,
+                ::VkSubpassDescription *_subpass,
+                ::VkRenderPassCreateInfo *_renderPassInfo,
+                ::VkFormat _swapChainImageFormat
+                                       );
 
-        static void InitShaderStageInfos(::VkPipelineShaderStageCreateInfo* _pipelineInfo, ::VkShaderModule _shaderModule, ::VkShaderStageFlagBits _stage);
+#pragma endregion VulkanEngine::privates::InfoInitializers
 
-        static ::VkShaderModule CreateShaderModule(const std::vector<char> &_code, ::VkDevice _device);
+#pragma region VulkanEngine::privates::InstanceInitializers
+
+#if PEPPER_VULKAN_VALIDATE_LAYERS
+
+        void InitValidationLayers();
+
+#endif
 
         void InitInstance();
 
@@ -131,22 +194,24 @@ namespace Pepper::Core
 
         void CreateGraphicsPipeline();
 
+#pragma endregion VulkanEngine::privates::InstanceInitializers
+
     public:
         VulkanEngine();
 
         ~VulkanEngine() override;
-
-        NO_DISCARD_UNUSED void *GetWindow() const override;
-
-        NO_DISCARD_UNUSED EngineType GetType() const override;
-
-        NO_DISCARD bool ShouldClose() override;
 
         void Init(int, int) override;
 
         void Update() override;
 
         void Shutdown() override;
+
+        NO_DISCARD_UNUSED void *GetWindow() const override;
+
+        NO_DISCARD bool ShouldClose() override;
+
+        NO_DISCARD_UNUSED EngineType GetType() const override;
     };
 }
 

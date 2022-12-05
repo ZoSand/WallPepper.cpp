@@ -77,11 +77,14 @@ namespace Pepper::Core
 
 #   endif
 
-    bool VulkanEngine::CheckExtensionSupport(::VkPhysicalDevice _device) const
+    bool VulkanEngine::CheckExtensionSupport(
+            ::VkPhysicalDevice _device,
+            const std::vector<const char *> &_requiredExtensions
+                                            )
     {
         ::uint32_t extensionCount;
         std::vector<::VkExtensionProperties> availableExtensions(0);
-        std::set<std::string> requiredExtensions(m_deviceExtensions.begin(), m_deviceExtensions.end());
+        std::set<std::string> requiredExtensions(_requiredExtensions.begin(), _requiredExtensions.end());
         ::VkResult result;
 
         result = ::vkEnumerateDeviceExtensionProperties(_device, nullptr, &extensionCount, nullptr);
@@ -99,22 +102,28 @@ namespace Pepper::Core
         return requiredExtensions.empty();
     }
 
-    bool VulkanEngine::IsDeviceSuitable(::VkPhysicalDevice _device)
+    bool VulkanEngine::IsDeviceSuitable(
+            ::VkPhysicalDevice _device,
+            const std::vector<const char *> &_requiredExtensions,
+            ::VkSurfaceKHR _surface
+                                       )
     {
         SwapChainSupportDetails swapChainSupport;
-        bool extensionsSupported = CheckExtensionSupport(_device);
+        bool extensionsSupported = CheckExtensionSupport(_device, _requiredExtensions);
         bool swapChainAdequate = false;
 
         if (extensionsSupported)
         {
-            swapChainSupport = QuerySwapChainSupport(_device);
+            swapChainSupport = QuerySwapChainSupport(_device, _surface);
             swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
         }
 
         return extensionsSupported && swapChainAdequate;
     }
 
-    ::uint32_t VulkanEngine::RateDeviceSuitability(::VkPhysicalDevice _device)
+    ::uint32_t VulkanEngine::RateDeviceSuitability(
+            ::VkPhysicalDevice _device
+                                                  )
     {
         ::VkPhysicalDeviceProperties deviceProperties;
         ::VkPhysicalDeviceFeatures deviceFeatures;
@@ -136,7 +145,10 @@ namespace Pepper::Core
         return score;
     }
 
-    VulkanEngine::QueueFamilyIndices VulkanEngine::FindQueueFamilies(::VkPhysicalDevice _device)
+    VulkanEngine::QueueFamilyIndices VulkanEngine::FindQueueFamilies(
+            ::VkPhysicalDevice _device,
+            ::VkSurfaceKHR _surface
+                                                                    )
     {
         QueueFamilyIndices indices{};
         ::uint32_t queueFamilyCount = 0;
@@ -151,7 +163,7 @@ namespace Pepper::Core
         for (const auto &queueFamily: queueFamilies)
         {
             ::VkResult result;
-            result = ::vkGetPhysicalDeviceSurfaceSupportKHR(_device, i, m_surface, &presentsSupport);
+            result = ::vkGetPhysicalDeviceSurfaceSupportKHR(_device, i, _surface, &presentsSupport);
             RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to physical device surface support")
 
             if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
@@ -173,33 +185,36 @@ namespace Pepper::Core
         return indices;
     }
 
-    VulkanEngine::SwapChainSupportDetails VulkanEngine::QuerySwapChainSupport(::VkPhysicalDevice _device)
+    VulkanEngine::SwapChainSupportDetails VulkanEngine::QuerySwapChainSupport(
+            ::VkPhysicalDevice _device,
+            ::VkSurfaceKHR _surface
+                                                                             )
     {
         SwapChainSupportDetails details;
         ::uint32_t formatCount;
         ::uint32_t presentModeCount;
         ::VkResult result;
 
-        result = ::vkGetPhysicalDeviceSurfaceCapabilitiesKHR(_device, m_surface, &details.capabilities);
+        result = ::vkGetPhysicalDeviceSurfaceCapabilitiesKHR(_device, _surface, &details.capabilities);
         RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to get physical device surface capabilities")
 
-        result = ::vkGetPhysicalDeviceSurfaceFormatsKHR(_device, m_surface, &formatCount, nullptr);
+        result = ::vkGetPhysicalDeviceSurfaceFormatsKHR(_device, _surface, &formatCount, nullptr);
         RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to get physical device surface formats count")
 
         if (formatCount != 0)
         {
             details.formats.resize(formatCount);
-            result = ::vkGetPhysicalDeviceSurfaceFormatsKHR(_device, m_surface, &formatCount, details.formats.data());
+            result = ::vkGetPhysicalDeviceSurfaceFormatsKHR(_device, _surface, &formatCount, details.formats.data());
             RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to get physical device surface formats")
         }
 
-        result = ::vkGetPhysicalDeviceSurfacePresentModesKHR(_device, m_surface, &presentModeCount, nullptr);
+        result = ::vkGetPhysicalDeviceSurfacePresentModesKHR(_device, _surface, &presentModeCount, nullptr);
         RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to get physical device surface present modes count")
 
         if (presentModeCount != 0)
         {
             details.presentModes.resize(presentModeCount);
-            result = ::vkGetPhysicalDeviceSurfacePresentModesKHR(_device, m_surface, &presentModeCount,
+            result = ::vkGetPhysicalDeviceSurfacePresentModesKHR(_device, _surface, &presentModeCount,
                                                                  details.presentModes.data());
             RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to get physical device surface present modes")
         }
@@ -207,7 +222,9 @@ namespace Pepper::Core
         return details;
     }
 
-    VkSurfaceFormatKHR VulkanEngine::ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &_availableFormats)
+    VkSurfaceFormatKHR VulkanEngine::ChooseSwapSurfaceFormat(
+            const std::vector<VkSurfaceFormatKHR> &_availableFormats
+                                                            )
     {
         for (const auto &availableFormat: _availableFormats)
         {
@@ -220,7 +237,9 @@ namespace Pepper::Core
         return _availableFormats[0];
     }
 
-    ::VkPresentModeKHR VulkanEngine::ChooseSwapPresentMode(const std::vector<VkPresentModeKHR> &_availableModes)
+    ::VkPresentModeKHR VulkanEngine::ChooseSwapPresentMode(
+            const std::vector<VkPresentModeKHR> &_availableModes
+                                                          )
     {
         for (const auto &availableMode: _availableModes)
         {
@@ -232,7 +251,10 @@ namespace Pepper::Core
         return VK_PRESENT_MODE_FIFO_KHR;
     }
 
-    ::VkExtent2D VulkanEngine::ChooseSwapExtent(::VkSurfaceCapabilitiesKHR _capabilities)
+    ::VkExtent2D VulkanEngine::ChooseSwapExtent(
+            ::VkSurfaceCapabilitiesKHR _capabilities,
+            ::GLFWwindow *_window
+                                               )
     {
         if (_capabilities.currentExtent.width != std::numeric_limits<::uint32_t>::max())
         {
@@ -243,7 +265,7 @@ namespace Pepper::Core
             int width;
             int height;
 
-            glfwGetFramebufferSize(m_glWindow, &width, &height);
+            glfwGetFramebufferSize(_window, &width, &height);
             ::VkExtent2D actualExtent = {
                     static_cast<::uint32_t>(width),
                     static_cast<::uint32_t>(height)
@@ -258,7 +280,59 @@ namespace Pepper::Core
         }
     }
 
-    void VulkanEngine::InitInstanceInfos(::VkApplicationInfo *_appInfo, ::VkInstanceCreateInfo *_createInfo)
+    std::vector<char> VulkanEngine::ReadShaderFile(
+            const std::string &filename
+                                                  )
+    {
+        std::ifstream file(filename, std::ios::ate | std::ios::binary);
+        long long fileSize;
+        std::vector<char> buffer(0);
+        RUNTIME_ASSERT(file.is_open(), "Failed to open shader file")
+
+        fileSize = static_cast<long long>(file.tellg());
+        buffer.resize(fileSize);
+        file.seekg(0);
+        file.read(buffer.data(), fileSize);
+
+        file.close();
+        return buffer;
+    }
+
+    ::VkShaderModule VulkanEngine::CreateShaderModule(
+            const std::vector<char> &_code,
+            ::VkDevice _device
+                                                     )
+    {
+        ::VkShaderModuleCreateInfo createInfo = {};
+        ::VkShaderModule shaderModule;
+        ::VkResult result;
+
+        createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+        createInfo.codeSize = _code.size();
+        createInfo.pCode = reinterpret_cast<const ::uint32_t *>(_code.data());
+
+        result = ::vkCreateShaderModule(_device, &createInfo, nullptr, &shaderModule);
+        RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to create shader module")
+
+        return shaderModule;
+    }
+
+    void VulkanEngine::InitShaderStageInfos(
+            ::VkPipelineShaderStageCreateInfo *_pipelineInfo,
+            ::VkShaderModule _shaderModule,
+            ::VkShaderStageFlagBits _stage
+                                           )
+    {
+        _pipelineInfo->sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        _pipelineInfo->stage = _stage;
+        _pipelineInfo->module = _shaderModule;
+        _pipelineInfo->pName = "main";
+    }
+
+    void VulkanEngine::InitInstanceInfos(
+            ::VkApplicationInfo *_appInfo,
+            ::VkInstanceCreateInfo *_createInfo
+                                        )
     {
         ::uint32_t glfwExtensionCount = 0;
         const char **glfwExtensions;
@@ -284,47 +358,153 @@ namespace Pepper::Core
 #   endif
     }
 
-    std::vector<char> VulkanEngine::ReadShaderFile(const std::string &filename)
+    void VulkanEngine::InitDeviceInfos(
+            QueueFamilyIndices _indices,
+            std::vector<::VkDeviceQueueCreateInfo> *_queueCreateInfos,
+            ::VkDeviceCreateInfo *_deviceCreateInfo
+                                      )
     {
-        std::ifstream file(filename, std::ios::ate | std::ios::binary);
-        long long fileSize;
-        std::vector<char> buffer(0);
-        RUNTIME_ASSERT(file.is_open(), "Failed to open shader file")
+        float queuePriority = 1.0f;
+        ::VkPhysicalDeviceFeatures deviceFeatures{};
+        std::set<::uint32_t> queueFamilies = {
+                _indices.graphicsFamily.value(),
+                _indices.presentFamily.value()
+        };
 
-        fileSize = static_cast<long long>(file.tellg());
-        buffer.resize(fileSize);
-        file.seekg(0);
-        file.read(buffer.data(), fileSize);
+        for (::uint32_t queueFamily: queueFamilies)
+        {
+            ::VkDeviceQueueCreateInfo queueCreateInfo{};
+            queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+            queueCreateInfo.queueFamilyIndex = queueFamily;
+            queueCreateInfo.queueCount = 1;
+            queueCreateInfo.pQueuePriorities = &queuePriority;
+            _queueCreateInfos->push_back(queueCreateInfo);
+        }
 
-        file.close();
-        return buffer;
+        _deviceCreateInfo->sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+        _deviceCreateInfo->queueCreateInfoCount = static_cast<::uint32_t>(_queueCreateInfos->size());
+        _deviceCreateInfo->pQueueCreateInfos = _queueCreateInfos->data();
+        _deviceCreateInfo->pEnabledFeatures = &deviceFeatures;
+        _deviceCreateInfo->enabledExtensionCount = static_cast<::uint32_t>(m_deviceExtensions.size());
+        _deviceCreateInfo->ppEnabledExtensionNames = m_deviceExtensions.data();
+
+#   if PEPPER_VULKAN_VALIDATE_LAYERS
+        _deviceCreateInfo->enabledLayerCount = static_cast<::uint32_t>(m_vkValidationLayers.size());
+        _deviceCreateInfo->ppEnabledLayerNames = m_vkValidationLayers.data();
+#   else
+        _deviceCreateInfo->enabledLayerCount = 0;
+#   endif
     }
 
-    ::VkShaderModule VulkanEngine::CreateShaderModule(const std::vector<char> &_code, ::VkDevice _device)
+    void VulkanEngine::InitSwapChainInfos(
+            const VulkanEngine::SwapChainSupportDetails &_swapChainSupport,
+            ::VkSwapchainCreateInfoKHR *_swapChainCreateInfo,
+            ::GLFWwindow *_glWindow,
+            ::VkPhysicalDevice _physicalDevice,
+            ::VkSurfaceKHR _surface,
+            ::VkExtent2D &_extent,
+            ::VkFormat &_imageFormat
+                                         )
     {
-        ::VkShaderModuleCreateInfo createInfo = {};
-        ::VkShaderModule shaderModule;
-        ::VkResult result;
+        ::VkSurfaceFormatKHR surfaceFormat = ChooseSwapSurfaceFormat(_swapChainSupport.formats);
+        ::VkPresentModeKHR presentMode = ChooseSwapPresentMode(_swapChainSupport.presentModes);
+        ::VkExtent2D extent = ChooseSwapExtent(_swapChainSupport.capabilities, _glWindow);
+        ::uint32_t imageCount = _swapChainSupport.capabilities.minImageCount + 1;
+        QueueFamilyIndices indices = FindQueueFamilies(_physicalDevice, _surface);
+        ::uint32_t queueFamilyIndices[] = {
+                indices.graphicsFamily.value(),
+                indices.presentFamily.value()
+        };
+        if (_swapChainSupport.capabilities.maxImageCount > 0 && imageCount > _swapChainSupport.capabilities
+                                                                                              .maxImageCount)
+        {
+            imageCount = _swapChainSupport.capabilities.maxImageCount;
+        }
 
-        createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-        createInfo.codeSize = _code.size();
-        createInfo.pCode = reinterpret_cast<const ::uint32_t *>(_code.data());
+        //TODO: move to a separate function
+        _swapChainCreateInfo->sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+        _swapChainCreateInfo->surface = _surface;
+        _swapChainCreateInfo->minImageCount = imageCount;
+        _swapChainCreateInfo->imageFormat = surfaceFormat.format;
+        _swapChainCreateInfo->imageColorSpace = surfaceFormat.colorSpace;
+        _swapChainCreateInfo->imageExtent = extent;
+        _swapChainCreateInfo->imageArrayLayers = 1;
+        _swapChainCreateInfo->imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-        result = ::vkCreateShaderModule(_device, &createInfo, nullptr, &shaderModule);
-        RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to create shader module")
+        if (indices.graphicsFamily != indices.presentFamily)
+        {
+            _swapChainCreateInfo->imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+            _swapChainCreateInfo->queueFamilyIndexCount = 2;
+            _swapChainCreateInfo->pQueueFamilyIndices = queueFamilyIndices;
+        }
+        else
+        {
+            _swapChainCreateInfo->imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+            _swapChainCreateInfo->queueFamilyIndexCount = 0;
+            _swapChainCreateInfo->pQueueFamilyIndices = nullptr;
+        }
 
-        return shaderModule;
+        _swapChainCreateInfo->preTransform = _swapChainSupport.capabilities.currentTransform;
+        _swapChainCreateInfo->compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+        _swapChainCreateInfo->presentMode = presentMode;
+        _swapChainCreateInfo->clipped = VK_TRUE;
+        _swapChainCreateInfo->oldSwapchain = VK_NULL_HANDLE;
+
+        _extent = extent;
+        _imageFormat = surfaceFormat.format;
     }
 
-    void VulkanEngine::InitShaderStageInfos(
-            ::VkPipelineShaderStageCreateInfo *_pipelineInfo, ::VkShaderModule _shaderModule,
-            ::VkShaderStageFlagBits _stage
-                                           )
+    void VulkanEngine::InitImageViewInfos(
+            ::VkImageViewCreateInfo *_imageViewCreateInfo,
+            ::VkImage _swapChainImage,
+            ::VkFormat _swapChainImageFormat
+                                         )
     {
-        _pipelineInfo->sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        _pipelineInfo->stage = _stage;
-        _pipelineInfo->module = _shaderModule;
-        _pipelineInfo->pName = "main";
+        _imageViewCreateInfo->sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        _imageViewCreateInfo->image = _swapChainImage;
+        _imageViewCreateInfo->viewType = VK_IMAGE_VIEW_TYPE_2D;
+        _imageViewCreateInfo->format = _swapChainImageFormat;
+        _imageViewCreateInfo->components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+        _imageViewCreateInfo->components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+        _imageViewCreateInfo->components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+        _imageViewCreateInfo->components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+        _imageViewCreateInfo->subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        _imageViewCreateInfo->subresourceRange.baseMipLevel = 0;
+        _imageViewCreateInfo->subresourceRange.levelCount = 1;
+        _imageViewCreateInfo->subresourceRange.baseArrayLayer = 0;
+        _imageViewCreateInfo->subresourceRange.layerCount = 1;
+    }
+
+
+    void VulkanEngine::InitRenderPassInfos(
+            ::VkAttachmentDescription *_colorAttachment,
+            ::VkAttachmentReference *_colorAttachmentRef,
+            ::VkSubpassDescription *_subpass,
+            ::VkRenderPassCreateInfo *_renderPassInfo,
+            ::VkFormat _swapChainImageFormat
+                                          )
+    {
+        _colorAttachment->format = _swapChainImageFormat;
+        _colorAttachment->samples = VK_SAMPLE_COUNT_1_BIT;
+        _colorAttachment->loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        _colorAttachment->storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        _colorAttachment->stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        _colorAttachment->stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        _colorAttachment->initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        _colorAttachment->finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+        _colorAttachmentRef->attachment = 0;
+        _colorAttachmentRef->layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+        _subpass->pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+        _subpass->colorAttachmentCount = 1;
+        _subpass->pColorAttachments = _colorAttachmentRef;
+
+        _renderPassInfo->sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+        _renderPassInfo->attachmentCount = 1;
+        _renderPassInfo->pAttachments = _colorAttachment;
+        _renderPassInfo->subpassCount = 1;
+        _renderPassInfo->pSubpasses = _subpass;
     }
 
     void VulkanEngine::InitInstance()
@@ -374,124 +554,16 @@ namespace Pepper::Core
         m_physicalDevice = candidates.rbegin()->second;
     }
 
-    void VulkanEngine::InitDeviceInfos(
-            QueueFamilyIndices _indices, std::vector<::VkDeviceQueueCreateInfo> *_queueCreateInfos,
-            ::VkDeviceCreateInfo *_deviceCreateInfo
-                                      )
-    {
-        float queuePriority = 1.0f;
-        ::VkPhysicalDeviceFeatures deviceFeatures{};
-        std::set<::uint32_t> queueFamilies = {
-                _indices.graphicsFamily.value(),
-                _indices.presentFamily.value()
-        };
-
-        for (::uint32_t queueFamily: queueFamilies)
-        {
-            ::VkDeviceQueueCreateInfo queueCreateInfo{};
-            queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-            queueCreateInfo.queueFamilyIndex = queueFamily;
-            queueCreateInfo.queueCount = 1;
-            queueCreateInfo.pQueuePriorities = &queuePriority;
-            _queueCreateInfos->push_back(queueCreateInfo);
-        }
-
-        _deviceCreateInfo->sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-        _deviceCreateInfo->queueCreateInfoCount = static_cast<::uint32_t>(_queueCreateInfos->size());
-        _deviceCreateInfo->pQueueCreateInfos = _queueCreateInfos->data();
-        _deviceCreateInfo->pEnabledFeatures = &deviceFeatures;
-        _deviceCreateInfo->enabledExtensionCount = static_cast<::uint32_t>(m_deviceExtensions.size());
-        _deviceCreateInfo->ppEnabledExtensionNames = m_deviceExtensions.data();
-
-#   if PEPPER_VULKAN_VALIDATE_LAYERS
-        _deviceCreateInfo->enabledLayerCount = static_cast<::uint32_t>(m_vkValidationLayers.size());
-        _deviceCreateInfo->ppEnabledLayerNames = m_vkValidationLayers.data();
-#   else
-        _deviceCreateInfo->enabledLayerCount = 0;
-#   endif
-    }
-
-    void VulkanEngine::InitSwapChainInfos(
-            const VulkanEngine::SwapChainSupportDetails &_swapChainSupport,
-            ::VkSwapchainCreateInfoKHR *_swapChainCreateInfo
-                                         )
-    {
-        ::VkSurfaceFormatKHR surfaceFormat = ChooseSwapSurfaceFormat(_swapChainSupport.formats);
-        ::VkPresentModeKHR presentMode = ChooseSwapPresentMode(_swapChainSupport.presentModes);
-        ::VkExtent2D extent = ChooseSwapExtent(_swapChainSupport.capabilities);
-        ::uint32_t imageCount = _swapChainSupport.capabilities.minImageCount + 1;
-        QueueFamilyIndices indices = FindQueueFamilies(m_physicalDevice);
-        ::uint32_t queueFamilyIndices[] = {
-                indices.graphicsFamily.value(),
-                indices.presentFamily.value()
-        };
-        if (_swapChainSupport.capabilities.maxImageCount > 0 && imageCount > _swapChainSupport.capabilities
-                                                                                              .maxImageCount)
-        {
-            imageCount = _swapChainSupport.capabilities.maxImageCount;
-        }
-
-        _swapChainCreateInfo->sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-        _swapChainCreateInfo->surface = m_surface;
-        _swapChainCreateInfo->minImageCount = imageCount;
-        _swapChainCreateInfo->imageFormat = surfaceFormat.format;
-        _swapChainCreateInfo->imageColorSpace = surfaceFormat.colorSpace;
-        _swapChainCreateInfo->imageExtent = extent;
-        _swapChainCreateInfo->imageArrayLayers = 1;
-        _swapChainCreateInfo->imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-
-        if (indices.graphicsFamily != indices.presentFamily)
-        {
-            _swapChainCreateInfo->imageSharingMode = VK_SHARING_MODE_CONCURRENT;
-            _swapChainCreateInfo->queueFamilyIndexCount = 2;
-            _swapChainCreateInfo->pQueueFamilyIndices = queueFamilyIndices;
-        }
-        else
-        {
-            _swapChainCreateInfo->imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-            _swapChainCreateInfo->queueFamilyIndexCount = 0;
-            _swapChainCreateInfo->pQueueFamilyIndices = nullptr;
-        }
-
-        _swapChainCreateInfo->preTransform = _swapChainSupport.capabilities.currentTransform;
-        _swapChainCreateInfo->compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-        _swapChainCreateInfo->presentMode = presentMode;
-        _swapChainCreateInfo->clipped = VK_TRUE;
-        _swapChainCreateInfo->oldSwapchain = VK_NULL_HANDLE;
-
-        m_swapChainExtent = extent;
-        m_swapChainImageFormat = surfaceFormat.format;
-    }
-
-
-    void VulkanEngine::InitImageViewInfos(
-            ::VkImageViewCreateInfo *_imageViewCreateInfo, ::VkImage _swapChainImage
-                                         )
-    {
-        _imageViewCreateInfo->sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        _imageViewCreateInfo->image = _swapChainImage;
-        _imageViewCreateInfo->viewType = VK_IMAGE_VIEW_TYPE_2D;
-        _imageViewCreateInfo->format = m_swapChainImageFormat;
-        _imageViewCreateInfo->components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-        _imageViewCreateInfo->components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-        _imageViewCreateInfo->components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-        _imageViewCreateInfo->components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-        _imageViewCreateInfo->subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        _imageViewCreateInfo->subresourceRange.baseMipLevel = 0;
-        _imageViewCreateInfo->subresourceRange.levelCount = 1;
-        _imageViewCreateInfo->subresourceRange.baseArrayLayer = 0;
-        _imageViewCreateInfo->subresourceRange.layerCount = 1;
-    }
-
     void VulkanEngine::CreateLogicalDevice()
     {
-        QueueFamilyIndices indices = FindQueueFamilies(m_physicalDevice);
+        QueueFamilyIndices indices = FindQueueFamilies(m_physicalDevice, m_surface);
         ::VkDeviceCreateInfo deviceCreateInfo{};
         ::VkResult result;
         std::vector<::VkDeviceQueueCreateInfo> queueCreateInfos;
 
         RUNTIME_ASSERT(indices.IsComplete(), "Failed to find suitable queue families")
-        RUNTIME_ASSERT(IsDeviceSuitable(m_physicalDevice), "Failed to find a suitable GPU")
+        RUNTIME_ASSERT(IsDeviceSuitable(m_physicalDevice, m_deviceExtensions, m_surface),
+                       "Failed to find a suitable GPU")
 
         InitDeviceInfos(indices, &queueCreateInfos, &deviceCreateInfo);
 
@@ -504,12 +576,14 @@ namespace Pepper::Core
 
     void VulkanEngine::CreateSwapChain()
     {
-        SwapChainSupportDetails swapChainSupport = QuerySwapChainSupport(m_physicalDevice);
+        SwapChainSupportDetails swapChainSupport = QuerySwapChainSupport(m_physicalDevice, m_surface);
         ::VkSwapchainCreateInfoKHR createInfo{};
         ::uint32_t swapChainImageCount;
         ::VkResult result;
 
-        InitSwapChainInfos(swapChainSupport, &createInfo);
+        InitSwapChainInfos(swapChainSupport, &createInfo, m_glWindow,
+                           m_physicalDevice, m_surface, m_swapChainExtent,
+                           m_swapChainImageFormat);
 
         result = ::vkCreateSwapchainKHR(m_device, &createInfo, nullptr, &m_swapChain);
         RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to create swap chain")
@@ -531,7 +605,7 @@ namespace Pepper::Core
             ::VkImageViewCreateInfo createInfo{};
             ::VkResult result;
 
-            InitImageViewInfos(&createInfo, m_swapChainImages[i]);
+            InitImageViewInfos(&createInfo, m_swapChainImages[i], m_swapChainImageFormat);
 
             result = ::vkCreateImageView(m_device, &createInfo, nullptr, &m_swapChainImageViews[i]);
             RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to create image views")
@@ -541,35 +615,13 @@ namespace Pepper::Core
     void VulkanEngine::CreateRenderPass()
     {
         ::VkResult result;
-        //TODO: move to separate function
         ::VkAttachmentDescription colorAttachment{};
-        colorAttachment.format = m_swapChainImageFormat;
-        colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-        colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-        colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-        colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-        colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
-        //TODO: move to separate function
         ::VkAttachmentReference colorAttachmentRef{};
-        colorAttachmentRef.attachment = 0;
-        colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-        //TODO: move to separate function
         ::VkSubpassDescription subpass{};
-        subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-        subpass.colorAttachmentCount = 1;
-        subpass.pColorAttachments = &colorAttachmentRef;
-
         ::VkRenderPassCreateInfo renderPassInfo{};
-        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-        renderPassInfo.attachmentCount = 1;
-        renderPassInfo.pAttachments = &colorAttachment;
-        renderPassInfo.subpassCount = 1;
-        renderPassInfo.pSubpasses = &subpass;
 
+        InitRenderPassInfos(&colorAttachment, &colorAttachmentRef, &subpass, &renderPassInfo,
+                            m_swapChainImageFormat);
         result = ::vkCreateRenderPass(m_device, &renderPassInfo, nullptr, &m_renderPass);
         RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to create render pass.")
     }
@@ -759,6 +811,7 @@ namespace Pepper::Core
 
     void VulkanEngine::Shutdown()
     {
+        ::vkDeviceWaitIdle(m_device);
         ::vkDestroyPipeline(m_device, m_graphicsPipeline, nullptr);
         ::vkDestroyPipelineLayout(m_device, m_pipelineLayout, nullptr);
         ::vkDestroyRenderPass(m_device, m_renderPass, nullptr);
