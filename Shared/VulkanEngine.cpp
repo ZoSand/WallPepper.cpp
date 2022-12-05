@@ -212,7 +212,7 @@ namespace Pepper::Core
         return _availableFormats[0];
     }
 
-    ::VkPresentModeKHR VulkanEngine::ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& _availableModes)
+    ::VkPresentModeKHR VulkanEngine::ChooseSwapPresentMode(const std::vector<VkPresentModeKHR> &_availableModes)
     {
         for (const auto &availableMode: _availableModes)
         {
@@ -290,6 +290,33 @@ namespace Pepper::Core
 
         file.close();
         return buffer;
+    }
+
+    ::VkShaderModule VulkanEngine::CreateShaderModule(const std::vector<char> &_code, ::VkDevice _device)
+    {
+        ::VkShaderModuleCreateInfo createInfo = {};
+        ::VkShaderModule shaderModule;
+        ::VkResult result;
+
+        createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+        createInfo.codeSize = _code.size();
+        createInfo.pCode = reinterpret_cast<const ::uint32_t *>(_code.data());
+
+        result = ::vkCreateShaderModule(_device, &createInfo, nullptr, &shaderModule);
+        RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to create shader module")
+
+        return shaderModule;
+    }
+
+    void VulkanEngine::InitShaderStageInfos(
+            ::VkPipelineShaderStageCreateInfo *_pipelineInfo, ::VkShaderModule _shaderModule,
+            ::VkShaderStageFlagBits _stage
+                                           )
+    {
+        _pipelineInfo->sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        _pipelineInfo->stage = _stage;
+        _pipelineInfo->module = _shaderModule;
+        _pipelineInfo->pName = "main";
     }
 
     void VulkanEngine::InitInstance()
@@ -505,8 +532,25 @@ namespace Pepper::Core
 
     void VulkanEngine::CreateGraphicsPipeline()
     {
-        auto vertShaderCode = ReadShaderFile("Shaders/shader.vert.spv");
-        auto fragShaderCode = ReadShaderFile("Shaders/shader.frag.spv");
+        ::VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
+        ::VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
+
+        auto vertShaderCode = ReadShaderFile("./Shaders/shader.vert.spv");
+        auto fragShaderCode = ReadShaderFile("./Shaders/shader.frag.spv");
+
+        ::VkShaderModule vertShaderModule = CreateShaderModule(vertShaderCode, m_device);
+        ::VkShaderModule fragShaderModule = CreateShaderModule(fragShaderCode, m_device);
+
+        ::VkPipelineShaderStageCreateInfo shaderStages[] = {
+                vertShaderStageInfo,
+                fragShaderStageInfo
+        };
+
+        InitShaderStageInfos(&vertShaderStageInfo, vertShaderModule, VK_SHADER_STAGE_VERTEX_BIT);
+        InitShaderStageInfos(&fragShaderStageInfo, fragShaderModule, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+        ::vkDestroyShaderModule(m_device, fragShaderModule, nullptr);
+        ::vkDestroyShaderModule(m_device, vertShaderModule, nullptr);
     }
 
     void VulkanEngine::Init(int _width, int _height)

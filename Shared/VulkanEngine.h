@@ -82,8 +82,10 @@ namespace Pepper::Core
                 &availableFormats
                                                                     );
 
-        NO_DISCARD static ::VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>&
-                _availableModes);
+        NO_DISCARD static ::VkPresentModeKHR ChooseSwapPresentMode(
+                const std::vector<VkPresentModeKHR> &
+                _availableModes
+                                                                  );
 
         NO_DISCARD ::VkExtent2D ChooseSwapExtent(::VkSurfaceCapabilitiesKHR _capabilities);
 
@@ -104,7 +106,11 @@ namespace Pepper::Core
                 ::VkImage _swapChainImage
                                );
 
-        static std::vector<char> ReadShaderFile(const std::string& filename);
+        static std::vector<char> ReadShaderFile(const std::string &filename);
+
+        static void InitShaderStageInfos(::VkPipelineShaderStageCreateInfo* _pipelineInfo, ::VkShaderModule _shaderModule, ::VkShaderStageFlagBits _stage);
+
+        static ::VkShaderModule CreateShaderModule(const std::vector<char> &_code, ::VkDevice _device);
 
         void InitInstance();
 
