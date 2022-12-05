@@ -133,15 +133,18 @@ namespace Pepper::Core
                 ::VkShaderStageFlagBits _stage
                                         );
 
-        void InitInstanceInfos(
+        static void InitInstanceInfos(
                 ::VkApplicationInfo *_appInfo,
-                ::VkInstanceCreateInfo *_createInfo
+                ::VkInstanceCreateInfo *_createInfo,
+                const std::vector<const char *> &_validationLayers = {}
                               );
 
-        void InitDeviceInfos(
+        static void InitDeviceInfos(
                 QueueFamilyIndices _indices,
                 std::vector<::VkDeviceQueueCreateInfo> *_queueCreateInfos,
-                ::VkDeviceCreateInfo *_deviceCreateInfo
+                ::VkDeviceCreateInfo *_deviceCreateInfo,
+                const std::vector<const char *> &_deviceExtensions,
+                const std::vector<const char *> &_validationLayers = {}
                             );
 
         static void InitSwapChainInfos(

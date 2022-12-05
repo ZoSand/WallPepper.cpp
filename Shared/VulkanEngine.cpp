@@ -331,7 +331,8 @@ namespace Pepper::Core
 
     void VulkanEngine::InitInstanceInfos(
             ::VkApplicationInfo *_appInfo,
-            ::VkInstanceCreateInfo *_createInfo
+            ::VkInstanceCreateInfo *_createInfo,
+            const std::vector<const char *> &_validationLayers
                                         )
     {
         ::uint32_t glfwExtensionCount = 0;
@@ -351,8 +352,8 @@ namespace Pepper::Core
         _createInfo->ppEnabledExtensionNames = glfwExtensions;
 
 #   if PEPPER_VULKAN_VALIDATE_LAYERS // If we are in debug mode we enable validation layers for vulkan
-        _createInfo->enabledLayerCount = static_cast<::uint32_t>(m_vkValidationLayers.size());
-        _createInfo->ppEnabledLayerNames = m_vkValidationLayers.data();
+        _createInfo->enabledLayerCount = static_cast<::uint32_t>(_validationLayers.size());
+        _createInfo->ppEnabledLayerNames = _validationLayers.data();
 #   else //else we disable them
         _createInfo->enabledLayerCount = 0;
 #   endif
@@ -361,7 +362,9 @@ namespace Pepper::Core
     void VulkanEngine::InitDeviceInfos(
             QueueFamilyIndices _indices,
             std::vector<::VkDeviceQueueCreateInfo> *_queueCreateInfos,
-            ::VkDeviceCreateInfo *_deviceCreateInfo
+            ::VkDeviceCreateInfo *_deviceCreateInfo,
+            const std::vector<const char *> &_deviceExtensions,
+            const std::vector<const char *> &_validationLayers
                                       )
     {
         float queuePriority = 1.0f;
@@ -385,12 +388,12 @@ namespace Pepper::Core
         _deviceCreateInfo->queueCreateInfoCount = static_cast<::uint32_t>(_queueCreateInfos->size());
         _deviceCreateInfo->pQueueCreateInfos = _queueCreateInfos->data();
         _deviceCreateInfo->pEnabledFeatures = &deviceFeatures;
-        _deviceCreateInfo->enabledExtensionCount = static_cast<::uint32_t>(m_deviceExtensions.size());
-        _deviceCreateInfo->ppEnabledExtensionNames = m_deviceExtensions.data();
+        _deviceCreateInfo->enabledExtensionCount = static_cast<::uint32_t>(_deviceExtensions.size());
+        _deviceCreateInfo->ppEnabledExtensionNames = _deviceExtensions.data();
 
 #   if PEPPER_VULKAN_VALIDATE_LAYERS
-        _deviceCreateInfo->enabledLayerCount = static_cast<::uint32_t>(m_vkValidationLayers.size());
-        _deviceCreateInfo->ppEnabledLayerNames = m_vkValidationLayers.data();
+        _deviceCreateInfo->enabledLayerCount = static_cast<::uint32_t>(_validationLayers.size());
+        _deviceCreateInfo->ppEnabledLayerNames = _validationLayers.data();
 #   else
         _deviceCreateInfo->enabledLayerCount = 0;
 #   endif
@@ -513,8 +516,11 @@ namespace Pepper::Core
         ::VkInstanceCreateInfo createInfo{};
         ::VkResult result;
 
+#if PEPPER_VULKAN_VALIDATE_LAYERS
+        InitInstanceInfos(&appInfo, &createInfo, m_vkValidationLayers);
+#else
         InitInstanceInfos(&appInfo, &createInfo);
-
+#endif
         result = ::vkCreateInstance(&createInfo, nullptr, &m_vkInstance);
         RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to create Instance")
     }
@@ -565,8 +571,11 @@ namespace Pepper::Core
         RUNTIME_ASSERT(IsDeviceSuitable(m_physicalDevice, m_deviceExtensions, m_surface),
                        "Failed to find a suitable GPU")
 
-        InitDeviceInfos(indices, &queueCreateInfos, &deviceCreateInfo);
-
+#if PEPPER_VULKAN_VALIDATE_LAYERS
+        InitDeviceInfos(indices, &queueCreateInfos, &deviceCreateInfo, m_deviceExtensions, m_vkValidationLayers);
+#else
+        InitDeviceInfos(indices, &queueCreateInfos, &deviceCreateInfo, m_deviceExtensions);
+#endif
         result = ::vkCreateDevice(m_physicalDevice, &deviceCreateInfo, nullptr, &m_device);
         RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to create logical device")
 
