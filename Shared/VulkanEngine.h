@@ -45,11 +45,11 @@ namespace Pepper::Core
         std::vector<::VkImageView> m_swapChainImageViews;
         std::vector<const char *> m_deviceExtensions;
 
-#       if PEPPER_VULKAN_VALIDATE_LAYERS
+#   if PEPPER_VULKAN_VALIDATE_LAYERS
 
         std::vector<const char *> m_vkValidationLayers;
 
-#       endif
+#   endif
 
 #pragma endregion VulkanEngine::Private::Members
 
@@ -175,11 +175,11 @@ namespace Pepper::Core
 
 #pragma region VulkanEngine::privates::InstanceInitializers
 
-#if PEPPER_VULKAN_VALIDATE_LAYERS
+#   if PEPPER_VULKAN_VALIDATE_LAYERS
 
         void InitValidationLayers();
 
-#endif
+#   endif
 
         void InitInstance();
 
