@@ -44,9 +44,9 @@ namespace Pepper::Core
 			, m_swapChainImageViews()
 			, m_swapChainFramebuffers()
 #   if PEPPER_VULKAN_VALIDATE_LAYERS
-			, m_vkValidationLayers({
-					                       "VK_LAYER_KHRONOS_validation"
-			                       })
+	, m_vkValidationLayers({
+								   "VK_LAYER_KHRONOS_validation"
+						   })
 #   endif
 	{}
 
@@ -984,7 +984,7 @@ namespace Pepper::Core
 		::glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 		//TODO: set GLFW_DECORATED to GLFW_FALSE
 		::glfwWindowHint(GLFW_DECORATED, GLFW_TRUE);
-		//TODO: set GLFW_VISIBLE to GLFW_FALSE to start window as hidden
+		//TODO: set GLFW_VISIBLE to GLFW_FALSE to start window as hidden so that we don't have a white popup window before setting it as background
 		::glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE);
 
 		m_glWindow = ::glfwCreateWindow(_width, _height, "ZWP", nullptr, nullptr);
