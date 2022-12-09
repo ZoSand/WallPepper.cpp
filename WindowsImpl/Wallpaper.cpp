@@ -5,6 +5,10 @@
 #include <stdexcept>
 #include "Wallpaper.h"
 
+#include "GLFW/glfw3.h"
+#define GLFW_EXPOSE_NATIVE_WIN32
+#include "GLFW/glfw3native.h"
+
 namespace Pepper::Impl
 {
 //CLion says this is a recursive chain loop, but it's secured by the _secondRun bool

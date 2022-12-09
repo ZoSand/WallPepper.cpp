@@ -612,6 +612,7 @@ namespace Pepper::Core
 		RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to submit draw command buffer!")
 
 
+		//TODO: move to a separate function
 		presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 		presentInfo.waitSemaphoreCount = 1;
 		presentInfo.pWaitSemaphores = signalSemaphores;
