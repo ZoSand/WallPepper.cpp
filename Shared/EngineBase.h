@@ -9,7 +9,7 @@
 
 namespace Pepper::Core
 {
-    class IEngine
+    class EngineBase
     {
     public:
         enum class EngineType
@@ -19,7 +19,7 @@ namespace Pepper::Core
             DirectX
         };
 
-        virtual ~IEngine() = default;
+        virtual ~EngineBase() = default;
 
         NO_DISCARD virtual bool ShouldClose() = 0;
 

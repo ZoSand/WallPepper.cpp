@@ -1016,6 +1016,9 @@ namespace Pepper::Core
 
 	void VulkanEngine::Shutdown()
 	{
+		//PLACE FIRST
+		::vkDeviceWaitIdle(m_device);
+
 		::vkDestroySemaphore(m_device, m_imageAvailableSemaphore, nullptr);
 		::vkDestroySemaphore(m_device, m_renderFinishedSemaphore, nullptr);
 		::vkDestroyFence(m_device, m_inFlightFence, nullptr);
@@ -1024,7 +1027,6 @@ namespace Pepper::Core
 		{
 			::vkDestroyFramebuffer(m_device, framebuffer, nullptr);
 		}
-		::vkDeviceWaitIdle(m_device);
 		::vkDestroyPipeline(m_device, m_graphicsPipeline, nullptr);
 		::vkDestroyPipelineLayout(m_device, m_pipelineLayout, nullptr);
 		::vkDestroyRenderPass(m_device, m_renderPass, nullptr);
@@ -1052,9 +1054,9 @@ namespace Pepper::Core
 		return ::glfwWindowShouldClose(m_glWindow);
 	}
 
-	IEngine::EngineType VulkanEngine::GetType() const
+	EngineBase::EngineType VulkanEngine::GetType() const
 	{
 		RUNTIME_ASSERT(m_glWindow != nullptr, "Failed to get window. Is Engine initialized?")
-		return IEngine::EngineType::Vulkan;
+		return EngineBase::EngineType::Vulkan;
 	}
 }

@@ -8,7 +8,7 @@
 //this library internal dependencies
 #   include "ConstantDefinitions.h" //should always be placed first
 #   include "Library.h"
-#   include "IEngine.h"
+#   include "EngineBase.h"
 
 //GLFW dependencies
 #   define GLFW_INCLUDE_VULKAN
@@ -23,7 +23,7 @@
 
 namespace Pepper::Core
 {
-    class PEPPER_SHARED_LIB VulkanEngine : public IEngine
+    class PEPPER_SHARED_LIB VulkanEngine : public EngineBase
     {
     private:
 #pragma region Members

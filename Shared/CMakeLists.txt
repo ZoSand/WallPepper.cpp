@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD 20)
 add_library(Shared STATIC
         ConstantDefinitions.h
         library.cpp library.h
-        Window.cpp Window.h IEngine.h VulkanEngine.cpp VulkanEngine.h)
+        Window.cpp Window.h EngineBase.h VulkanEngine.cpp VulkanEngine.h)
 
 find_package(Vulkan REQUIRED)
 add_subdirectory(glfw)

@@ -64,21 +64,21 @@ namespace Pepper::Impl
     {
         ::RECT wndRect;
         ::GetWindowRect(static_cast<::HWND>(Core::Window::GetWindow()), &wndRect);
-        Core::IEngine *engine;
-        Core::Window::SetEngine(Core::IEngine::EngineType::Vulkan);
+        Core::EngineBase *engine;
+        Core::Window::SetEngine(Core::EngineBase::EngineType::Vulkan);
         engine = Core::Window::GetEngine();
         engine->Init(wndRect.right - wndRect.left, wndRect.bottom - wndRect.top);
         switch (engine->GetType())
         {
-            case Core::IEngine::EngineType::Vulkan:
-            case Core::IEngine::EngineType::OpenGL:
+            case Core::EngineBase::EngineType::Vulkan:
+            case Core::EngineBase::EngineType::OpenGL:
             {
                 //::SetParent(
                 //        glfwGetWin32Window(static_cast<::GLFWwindow *>(engine->GetWindow())),
                 //        static_cast<::HWND>(Core::Window::GetWindow()));
             }
                 break;
-            case Core::IEngine::EngineType::DirectX:
+            case Core::EngineBase::EngineType::DirectX:
                 break;
             default:
                 throw std::runtime_error("Engine type not supported");

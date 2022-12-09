@@ -23,7 +23,7 @@ namespace Pepper::Core {
         return m_handle;
     }
 
-    void Window::SetEngineInternal(IEngine *_engine) {
+    void Window::SetEngineInternal(EngineBase *_engine) {
         if (m_engine != nullptr) {
             m_engine->Shutdown();
             delete m_engine;
@@ -32,19 +32,19 @@ namespace Pepper::Core {
         m_engine = _engine;
     }
 
-    void Window::SetEngine(IEngine::EngineType _engineType) {
+    void Window::SetEngine(EngineBase::EngineType _engineType) {
         switch (_engineType) {
-            case IEngine::EngineType::Vulkan:
+            case EngineBase::EngineType::Vulkan:
                 SetEngineInternal(new VulkanEngine());
                 break;
-            case IEngine::EngineType::OpenGL: //new OpenGLEngine();
-            case IEngine::EngineType::DirectX: //new DirectXEngine();
+            case EngineBase::EngineType::OpenGL: //new OpenGLEngine();
+            case EngineBase::EngineType::DirectX: //new DirectXEngine();
             default:
                 throw std::runtime_error("Engine type not supported");
         }
     }
 
-    IEngine *Window::GetEngine() {
+    EngineBase *Window::GetEngine() {
         RUNTIME_ASSERT(m_engine != nullptr, "Engine is not set")
         return m_engine;
     }

@@ -7,7 +7,7 @@
 
 //THIS LIBRARY DEFINITIONS
 #   include "library.h"
-#   include "IEngine.h"
+#   include "EngineBase.h"
 
 namespace Pepper::Core
 {
@@ -15,9 +15,9 @@ namespace Pepper::Core
     {
     private:
         void *m_handle;
-        IEngine *m_engine;
+        EngineBase *m_engine;
 
-        void SetEngineInternal(IEngine *_engine);
+        void SetEngineInternal(EngineBase *_engine);
 
     protected:
         MAYBE_UNUSED void SetWindow(void *_window);
@@ -31,9 +31,9 @@ namespace Pepper::Core
 
         NO_DISCARD_UNUSED void *GetWindow() const;
 
-        void SetEngine(IEngine::EngineType _engineType);
+        void SetEngine(EngineBase::EngineType _engineType);
 
-        IEngine *GetEngine();
+        EngineBase *GetEngine();
 
         virtual void Shutdown();
     };
