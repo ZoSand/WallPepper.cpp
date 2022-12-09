@@ -584,6 +584,8 @@ namespace Pepper::Core
 		::VkSemaphore waitSemaphores[] = { m_imageAvailableSemaphore };
 		::VkSemaphore signalSemaphores[] = { m_renderFinishedSemaphore };
 		::VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+		::VkPresentInfoKHR presentInfo { };
+		::VkSwapchainKHR swapChains[] = { m_swapChain };
 		::VkResult result;
 
 		::vkWaitForFences(m_device, 1, &m_inFlightFence, VK_TRUE, UINT64_MAX);
@@ -610,6 +612,15 @@ namespace Pepper::Core
 		RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to submit draw command buffer!")
 
 
+		presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+		presentInfo.waitSemaphoreCount = 1;
+		presentInfo.pWaitSemaphores = signalSemaphores;
+		presentInfo.swapchainCount = 1;
+		presentInfo.pSwapchains = swapChains;
+		presentInfo.pImageIndices = &imageIndex;
+		presentInfo.pResults = nullptr;
+
+		::vkQueuePresentKHR(m_presentQueue, &presentInfo);
 	}
 
 	void VulkanEngine::InitInstance()
