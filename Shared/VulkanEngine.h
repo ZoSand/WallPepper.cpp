@@ -48,6 +48,7 @@ namespace Pepper::Core
 
 		::uint32_t m_currentFrame;
 
+		bool m_framebufferResized;
 
 		std::vector<::VkCommandBuffer> m_commandBuffers;
 		std::vector<::VkSemaphore> m_imageAvailableSemaphores;
@@ -59,11 +60,7 @@ namespace Pepper::Core
 		std::vector<const char*> m_deviceExtensions;
 		std::vector<::VkFramebuffer> m_swapChainFramebuffers;
 
-#   if PEPPER_VULKAN_VALIDATE_LAYERS
-
 		std::vector<const char*> m_vkValidationLayers;
-
-#   endif
 
 #pragma endregion Members
 
@@ -90,6 +87,12 @@ namespace Pepper::Core
 #pragma endregion Structures Definitions
 
 #pragma region Utils
+
+		static void FramebufferResizeCallback(
+				GLFWwindow* _window,
+				int _width,
+				int _height
+		                                     );
 
 		NO_DISCARD static bool CheckExtensionSupport(
 				::VkPhysicalDevice _device,
@@ -205,11 +208,7 @@ namespace Pepper::Core
 
 #pragma region Instance Initializers
 
-#   if PEPPER_VULKAN_VALIDATE_LAYERS
-
 		void InitValidationLayers();
-
-#   endif
 
 		void InitInstance();
 

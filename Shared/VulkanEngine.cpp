@@ -46,14 +46,14 @@ namespace Pepper::Core
 			, m_swapChainFramebuffers()
 #   if PEPPER_VULKAN_VALIDATE_LAYERS
 			, m_vkValidationLayers({
-					                       "VK_LAYER_KHRONOS_validation"
-			                       })
+										   "VK_LAYER_KHRONOS_validation"
+								   })
+#   else
+			, m_vkValidationLayers()
 #   endif
 	{}
 
 	VulkanEngine::~VulkanEngine() = default;
-
-#   if PEPPER_VULKAN_VALIDATE_LAYERS
 
 	void VulkanEngine::InitValidationLayers()
 	{
@@ -85,7 +85,19 @@ namespace Pepper::Core
 		//TODO: add Message callback handling
 	}
 
-#   endif
+	void VulkanEngine::FramebufferResizeCallback(
+			GLFWwindow* _window,
+			int _width,
+			int _height
+	                                            )
+	{
+		//remove warning about unused parameters
+		(void) _width;
+		(void) _height;
+
+		auto engine = reinterpret_cast<VulkanEngine*>(glfwGetWindowUserPointer(_window));
+		engine->m_framebufferResized = true;
+	}
 
 	bool VulkanEngine::CheckExtensionSupport(
 			::VkPhysicalDevice _device,
@@ -360,13 +372,8 @@ namespace Pepper::Core
 		_createInfo->pApplicationInfo = _appInfo;
 		_createInfo->enabledExtensionCount = glfwExtensionCount;
 		_createInfo->ppEnabledExtensionNames = glfwExtensions;
-
-#   if PEPPER_VULKAN_VALIDATE_LAYERS // If we are in debug mode we enable validation layers for vulkan
 		_createInfo->enabledLayerCount = static_cast<::uint32_t>(_validationLayers.size());
 		_createInfo->ppEnabledLayerNames = _validationLayers.data();
-#   else //else we disable them
-		_createInfo->enabledLayerCount = 0;
-#   endif
 	}
 
 	void VulkanEngine::InitDeviceInfos(
@@ -400,13 +407,8 @@ namespace Pepper::Core
 		_deviceCreateInfo->pEnabledFeatures = &deviceFeatures;
 		_deviceCreateInfo->enabledExtensionCount = static_cast<::uint32_t>(_deviceExtensions.size());
 		_deviceCreateInfo->ppEnabledExtensionNames = _deviceExtensions.data();
-
-#   if PEPPER_VULKAN_VALIDATE_LAYERS
 		_deviceCreateInfo->enabledLayerCount = static_cast<::uint32_t>(_validationLayers.size());
 		_deviceCreateInfo->ppEnabledLayerNames = _validationLayers.data();
-#   else
-		_deviceCreateInfo->enabledLayerCount = 0;
-#   endif
 	}
 
 	void VulkanEngine::InitSwapChainInfos(
@@ -593,15 +595,17 @@ namespace Pepper::Core
 		::vkResetFences(m_device, 1, &m_inFlightFences[m_currentFrame]);
 
 		result = ::vkAcquireNextImageKHR(m_device, m_swapChain, UINT64_MAX, m_imageAvailableSemaphores[m_currentFrame],
-		                        VK_NULL_HANDLE,
-		                        &imageIndex);
+		                                 VK_NULL_HANDLE,
+		                                 &imageIndex);
 
 		if (result == VK_ERROR_OUT_OF_DATE_KHR)
 		{
 			RecreateSwapChain();
 			return;
 		}
-		RUNTIME_ASSERT(result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR, "Failed to acquire swap chain image!")
+		else {
+			RUNTIME_ASSERT(result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR, "Failed to acquire swap chain image!")
+		}
 
 		::vkResetFences(m_device, 1, &m_inFlightFences[m_currentFrame]);
 
@@ -635,8 +639,9 @@ namespace Pepper::Core
 
 		result = ::vkQueuePresentKHR(m_presentQueue, &presentInfo);
 
-		if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
+		if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_framebufferResized)
 		{
+			m_framebufferResized = false;
 			RecreateSwapChain();
 		}
 		else
@@ -653,11 +658,8 @@ namespace Pepper::Core
 		::VkInstanceCreateInfo createInfo { };
 		::VkResult result;
 
-#if PEPPER_VULKAN_VALIDATE_LAYERS
 		InitInstanceInfos(&appInfo, &createInfo, m_vkValidationLayers);
-#else
-		InitInstanceInfos(&appInfo, &createInfo);
-#endif
+
 		result = ::vkCreateInstance(&createInfo, nullptr, &m_vkInstance);
 		RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to create Instance")
 	}
@@ -708,11 +710,8 @@ namespace Pepper::Core
 		RUNTIME_ASSERT(IsDeviceSuitable(m_physicalDevice, m_deviceExtensions, m_surface),
 		               "Failed to find a suitable GPU")
 
-#if PEPPER_VULKAN_VALIDATE_LAYERS
 		InitDeviceInfos(indices, &queueCreateInfos, &deviceCreateInfo, m_deviceExtensions, m_vkValidationLayers);
-#else
-		InitDeviceInfos(indices, &queueCreateInfos, &deviceCreateInfo, m_deviceExtensions);
-#endif
+
 		result = ::vkCreateDevice(m_physicalDevice, &deviceCreateInfo, nullptr, &m_device);
 		RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to create logical device")
 
@@ -759,6 +758,14 @@ namespace Pepper::Core
 
 	void VulkanEngine::RecreateSwapChain()
 	{
+		int width = 0, height = 0;
+		::glfwGetFramebufferSize(m_glWindow, &width, &height);
+
+		while (width == 0 || height == 0) {
+			::glfwGetFramebufferSize(m_glWindow, &width, &height);
+			::glfwWaitEvents();
+		}
+
 		::vkDeviceWaitIdle(m_device);
 
 		CleanupSwapChain();
@@ -1033,7 +1040,8 @@ namespace Pepper::Core
 		RUNTIME_ASSERT(result == GLFW_TRUE, "Failed to initialize GLFW.")
 
 		::glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-		::glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+		//It's the parent that will take care of resizing, but we still need to handle some callbacks
+		::glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 		//TODO: set GLFW_DECORATED to GLFW_FALSE
 		::glfwWindowHint(GLFW_DECORATED, GLFW_TRUE);
 		//TODO: set GLFW_VISIBLE to GLFW_FALSE to start window as hidden so that we don't have a white popup window before setting it as background
@@ -1041,6 +1049,9 @@ namespace Pepper::Core
 
 		m_glWindow = ::glfwCreateWindow(_width, _height, "ZWP", nullptr, nullptr);
 		RUNTIME_ASSERT(m_glWindow != nullptr, "Failed to create GLFW window.")
+
+		::glfwSetWindowUserPointer(m_glWindow, this);
+		::glfwSetFramebufferSizeCallback(m_glWindow, VulkanEngine::FramebufferResizeCallback);
 
 #   if PEPPER_VULKAN_VALIDATE_LAYERS
 		InitValidationLayers();
