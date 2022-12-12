@@ -592,11 +592,23 @@ namespace Pepper::Core
 		::vkWaitForFences(m_device, 1, &m_inFlightFences[m_currentFrame], VK_TRUE, UINT64_MAX);
 		::vkResetFences(m_device, 1, &m_inFlightFences[m_currentFrame]);
 
-		::vkAcquireNextImageKHR(m_device, m_swapChain, UINT64_MAX, m_imageAvailableSemaphores[m_currentFrame], VK_NULL_HANDLE,
+		result = ::vkAcquireNextImageKHR(m_device, m_swapChain, UINT64_MAX, m_imageAvailableSemaphores[m_currentFrame],
+		                        VK_NULL_HANDLE,
 		                        &imageIndex);
+
+		if (result == VK_ERROR_OUT_OF_DATE_KHR)
+		{
+			RecreateSwapChain();
+			return;
+		}
+		RUNTIME_ASSERT(result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR, "Failed to acquire swap chain image!")
+
+		::vkResetFences(m_device, 1, &m_inFlightFences[m_currentFrame]);
+
 		::vkResetCommandBuffer(m_commandBuffers[m_currentFrame], 0);
 
-		RecordCommandBuffer(m_commandBuffers[m_currentFrame], m_renderPass, m_swapChainFramebuffers[imageIndex], m_swapChainExtent,
+		RecordCommandBuffer(m_commandBuffers[m_currentFrame], m_renderPass, m_swapChainFramebuffers[imageIndex],
+		                    m_swapChainExtent,
 		                    m_graphicsPipeline);
 
 		//TODO: move to a separate function
@@ -612,7 +624,6 @@ namespace Pepper::Core
 		result = ::vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, m_inFlightFences[m_currentFrame]);
 		RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to submit draw command buffer!")
 
-
 		//TODO: move to a separate function
 		presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 		presentInfo.waitSemaphoreCount = 1;
@@ -622,7 +633,16 @@ namespace Pepper::Core
 		presentInfo.pImageIndices = &imageIndex;
 		presentInfo.pResults = nullptr;
 
-		::vkQueuePresentKHR(m_presentQueue, &presentInfo);
+		result = ::vkQueuePresentKHR(m_presentQueue, &presentInfo);
+
+		if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
+		{
+			RecreateSwapChain();
+		}
+		else
+		{
+			RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to present swap chain image!")
+		}
 
 		m_currentFrame = (m_currentFrame + 1) % VulkanEngine::MAX_FRAMES_IN_FLIGHT;
 	}
@@ -720,6 +740,32 @@ namespace Pepper::Core
 		m_swapChainImages.resize(swapChainImageCount);
 		result = ::vkGetSwapchainImagesKHR(m_device, m_swapChain, &swapChainImageCount, m_swapChainImages.data());
 		RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to get swap chain images")
+	}
+
+	void VulkanEngine::CleanupSwapChain()
+	{
+		for (auto framebuffer: m_swapChainFramebuffers)
+		{
+			::vkDestroyFramebuffer(m_device, framebuffer, nullptr);
+		}
+
+		for (auto &imageView: m_swapChainImageViews)
+		{
+			::vkDestroyImageView(m_device, imageView, nullptr);
+		}
+
+		::vkDestroySwapchainKHR(m_device, m_swapChain, nullptr);
+	}
+
+	void VulkanEngine::RecreateSwapChain()
+	{
+		::vkDeviceWaitIdle(m_device);
+
+		CleanupSwapChain();
+
+		CreateSwapChain();
+		CreateImageViews();
+		CreateFramebuffers();
 	}
 
 	void VulkanEngine::CreateImageViews()
@@ -1025,6 +1071,13 @@ namespace Pepper::Core
 		//PLACE FIRST
 		::vkDeviceWaitIdle(m_device);
 
+		CleanupSwapChain();
+
+		::vkDestroyPipeline(m_device, m_graphicsPipeline, nullptr);
+		::vkDestroyPipelineLayout(m_device, m_pipelineLayout, nullptr);
+
+		::vkDestroyRenderPass(m_device, m_renderPass, nullptr);
+
 		for (int i = 0; i < VulkanEngine::MAX_FRAMES_IN_FLIGHT; ++i)
 		{
 			::vkDestroySemaphore(m_device, m_renderFinishedSemaphores[i], nullptr);
@@ -1034,25 +1087,13 @@ namespace Pepper::Core
 
 		::vkDestroyCommandPool(m_device, m_commandPool, nullptr);
 
-		for (auto framebuffer: m_swapChainFramebuffers)
-		{
-			::vkDestroyFramebuffer(m_device, framebuffer, nullptr);
-		}
-
-		::vkDestroyPipeline(m_device, m_graphicsPipeline, nullptr);
-		::vkDestroyPipelineLayout(m_device, m_pipelineLayout, nullptr);
-		::vkDestroyRenderPass(m_device, m_renderPass, nullptr);
-
-		for (auto &imageView: m_swapChainImageViews)
-		{
-			::vkDestroyImageView(m_device, imageView, nullptr);
-		}
-
-		::vkDestroySwapchainKHR(m_device, m_swapChain, nullptr);
 		::vkDestroyDevice(m_device, nullptr);
+
 		::vkDestroySurfaceKHR(m_vkInstance, m_surface, nullptr);
 		::vkDestroyInstance(m_vkInstance, nullptr);
+
 		::glfwDestroyWindow(m_glWindow);
+
 		::glfwTerminate();
 	}
 
