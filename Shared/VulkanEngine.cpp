@@ -24,7 +24,7 @@ namespace Pepper::Core
 			, m_presentQueue(VK_NULL_HANDLE)
 			, m_surface(VK_NULL_HANDLE)
 			, m_swapChain(VK_NULL_HANDLE)
-			, m_swapChainImageFormat(VK_FORMAT_UNDEFINED)
+			, m_swapChainImageFormat(::VkFormat::VK_FORMAT_UNDEFINED)
 			, m_swapChainExtent({
 					                    0,
 					                    0
