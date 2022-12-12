@@ -33,10 +33,11 @@ namespace Pepper::Core
 			, m_pipelineLayout(VK_NULL_HANDLE)
 			, m_graphicsPipeline(VK_NULL_HANDLE)
 			, m_commandPool(VK_NULL_HANDLE)
-			, m_commandBuffer(VK_NULL_HANDLE)
-			, m_imageAvailableSemaphore(VK_NULL_HANDLE)
-			, m_renderFinishedSemaphore(VK_NULL_HANDLE)
-			, m_inFlightFence(VK_NULL_HANDLE)
+			, m_currentFrame(0)
+			, m_commandBuffers()
+			, m_imageAvailableSemaphores()
+			, m_renderFinishedSemaphores()
+			, m_inFlightFences()
 			, m_deviceExtensions({
 					                     VK_KHR_SWAPCHAIN_EXTENSION_NAME
 			                     })
@@ -44,9 +45,9 @@ namespace Pepper::Core
 			, m_swapChainImageViews()
 			, m_swapChainFramebuffers()
 #   if PEPPER_VULKAN_VALIDATE_LAYERS
-	, m_vkValidationLayers({
-								   "VK_LAYER_KHRONOS_validation"
-						   })
+			, m_vkValidationLayers({
+					                       "VK_LAYER_KHRONOS_validation"
+			                       })
 #   endif
 	{}
 
@@ -581,21 +582,21 @@ namespace Pepper::Core
 	{
 		::uint32_t imageIndex;
 		::VkSubmitInfo submitInfo { };
-		::VkSemaphore waitSemaphores[] = { m_imageAvailableSemaphore };
-		::VkSemaphore signalSemaphores[] = { m_renderFinishedSemaphore };
+		::VkSemaphore waitSemaphores[] = { m_imageAvailableSemaphores[m_currentFrame] };
+		::VkSemaphore signalSemaphores[] = { m_renderFinishedSemaphores[m_currentFrame] };
 		::VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 		::VkPresentInfoKHR presentInfo { };
 		::VkSwapchainKHR swapChains[] = { m_swapChain };
 		::VkResult result;
 
-		::vkWaitForFences(m_device, 1, &m_inFlightFence, VK_TRUE, UINT64_MAX);
-		::vkResetFences(m_device, 1, &m_inFlightFence);
+		::vkWaitForFences(m_device, 1, &m_inFlightFences[m_currentFrame], VK_TRUE, UINT64_MAX);
+		::vkResetFences(m_device, 1, &m_inFlightFences[m_currentFrame]);
 
-		::vkAcquireNextImageKHR(m_device, m_swapChain, UINT64_MAX, m_imageAvailableSemaphore, VK_NULL_HANDLE,
+		::vkAcquireNextImageKHR(m_device, m_swapChain, UINT64_MAX, m_imageAvailableSemaphores[m_currentFrame], VK_NULL_HANDLE,
 		                        &imageIndex);
-		::vkResetCommandBuffer(m_commandBuffer, 0);
+		::vkResetCommandBuffer(m_commandBuffers[m_currentFrame], 0);
 
-		RecordCommandBuffer(m_commandBuffer, m_renderPass, m_swapChainFramebuffers[imageIndex], m_swapChainExtent,
+		RecordCommandBuffer(m_commandBuffers[m_currentFrame], m_renderPass, m_swapChainFramebuffers[imageIndex], m_swapChainExtent,
 		                    m_graphicsPipeline);
 
 		//TODO: move to a separate function
@@ -604,11 +605,11 @@ namespace Pepper::Core
 		submitInfo.pWaitSemaphores = waitSemaphores;
 		submitInfo.pWaitDstStageMask = waitStages;
 		submitInfo.commandBufferCount = 1;
-		submitInfo.pCommandBuffers = &m_commandBuffer;
+		submitInfo.pCommandBuffers = &m_commandBuffers[m_currentFrame];
 		submitInfo.signalSemaphoreCount = 1;
 		submitInfo.pSignalSemaphores = signalSemaphores;
 
-		result = ::vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, m_inFlightFence);
+		result = ::vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, m_inFlightFences[m_currentFrame]);
 		RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to submit draw command buffer!")
 
 
@@ -622,6 +623,8 @@ namespace Pepper::Core
 		presentInfo.pResults = nullptr;
 
 		::vkQueuePresentKHR(m_presentQueue, &presentInfo);
+
+		m_currentFrame = (m_currentFrame + 1) % VulkanEngine::MAX_FRAMES_IN_FLIGHT;
 	}
 
 	void VulkanEngine::InitInstance()
@@ -936,18 +939,20 @@ namespace Pepper::Core
 		RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to create command pool.")
 	}
 
-	void VulkanEngine::CreateCommandBuffer()
+	void VulkanEngine::CreateCommandBuffers()
 	{
 		::VkCommandBufferAllocateInfo allocInfo { };
 		::VkResult result;
+
+		m_commandBuffers.resize(VulkanEngine::MAX_FRAMES_IN_FLIGHT);
 
 		//TODO: move this to a separate function
 		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 		allocInfo.commandPool = m_commandPool;
 		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-		allocInfo.commandBufferCount = 1;
+		allocInfo.commandBufferCount = m_commandBuffers.size();
 
-		result = vkAllocateCommandBuffers(m_device, &allocInfo, &m_commandBuffer);
+		result = vkAllocateCommandBuffers(m_device, &allocInfo, m_commandBuffers.data());
 		RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to allocate command buffer.")
 	}
 
@@ -957,17 +962,24 @@ namespace Pepper::Core
 		::VkFenceCreateInfo fenceInfo { };
 		::VkResult result;
 
+		m_imageAvailableSemaphores.resize(VulkanEngine::MAX_FRAMES_IN_FLIGHT);
+		m_renderFinishedSemaphores.resize(VulkanEngine::MAX_FRAMES_IN_FLIGHT);
+		m_inFlightFences.resize(VulkanEngine::MAX_FRAMES_IN_FLIGHT);
+
 		semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
 		fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 		fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-		result = vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, &m_imageAvailableSemaphore);
-		RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to create image available semaphore.")
-		result = vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, &m_renderFinishedSemaphore);
-		RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to create render finished semaphore.")
-		result = vkCreateFence(m_device, &fenceInfo, nullptr, &m_inFlightFence);
-		RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to create in flight fence.")
+		for (int i = 0; i < VulkanEngine::MAX_FRAMES_IN_FLIGHT; ++i)
+		{
+			result = ::vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, &m_imageAvailableSemaphores[i]);
+			RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to create image available semaphore.")
+			result = ::vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, &m_renderFinishedSemaphores[i]);
+			RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to create render finished semaphore.")
+			result = ::vkCreateFence(m_device, &fenceInfo, nullptr, &m_inFlightFences[i]);
+			RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to create in flight fence.")
+		}
 	}
 
 	void VulkanEngine::Init(
@@ -1004,7 +1016,7 @@ namespace Pepper::Core
 		CreateGraphicsPipeline();
 		CreateFramebuffers();
 		CreateCommandPool();
-		CreateCommandBuffer();
+		CreateCommandBuffers();
 		CreateSyncObjects();
 	}
 
@@ -1019,21 +1031,29 @@ namespace Pepper::Core
 		//PLACE FIRST
 		::vkDeviceWaitIdle(m_device);
 
-		::vkDestroySemaphore(m_device, m_imageAvailableSemaphore, nullptr);
-		::vkDestroySemaphore(m_device, m_renderFinishedSemaphore, nullptr);
-		::vkDestroyFence(m_device, m_inFlightFence, nullptr);
+		for (int i = 0; i < VulkanEngine::MAX_FRAMES_IN_FLIGHT; ++i)
+		{
+			::vkDestroySemaphore(m_device, m_renderFinishedSemaphores[i], nullptr);
+			::vkDestroySemaphore(m_device, m_imageAvailableSemaphores[i], nullptr);
+			::vkDestroyFence(m_device, m_inFlightFences[i], nullptr);
+		}
+
 		::vkDestroyCommandPool(m_device, m_commandPool, nullptr);
+
 		for (auto framebuffer: m_swapChainFramebuffers)
 		{
 			::vkDestroyFramebuffer(m_device, framebuffer, nullptr);
 		}
+
 		::vkDestroyPipeline(m_device, m_graphicsPipeline, nullptr);
 		::vkDestroyPipelineLayout(m_device, m_pipelineLayout, nullptr);
 		::vkDestroyRenderPass(m_device, m_renderPass, nullptr);
+
 		for (auto &imageView: m_swapChainImageViews)
 		{
 			::vkDestroyImageView(m_device, imageView, nullptr);
 		}
+
 		::vkDestroySwapchainKHR(m_device, m_swapChain, nullptr);
 		::vkDestroyDevice(m_device, nullptr);
 		::vkDestroySurfaceKHR(m_vkInstance, m_surface, nullptr);
