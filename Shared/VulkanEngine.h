@@ -221,6 +221,10 @@ namespace Pepper::Core
 
 		void CreateSwapChain();
 
+		void CleanupSwapChain();
+
+		void RecreateSwapChain();
+
 		void CreateImageViews();
 
 		void CreateRenderPass();
