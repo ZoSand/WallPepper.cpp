@@ -34,10 +34,10 @@ namespace Pepper::Core
 			, m_graphicsPipeline(VK_NULL_HANDLE)
 			, m_commandPool(VK_NULL_HANDLE)
 			, m_currentFrame(0)
-			, m_commandBuffers()
-			, m_imageAvailableSemaphores()
-			, m_renderFinishedSemaphores()
-			, m_inFlightFences()
+			, m_commandBuffers(MAX_FRAMES_IN_FLIGHT)
+			, m_imageAvailableSemaphores(MAX_FRAMES_IN_FLIGHT)
+			, m_renderFinishedSemaphores(MAX_FRAMES_IN_FLIGHT)
+			, m_inFlightFences(MAX_FRAMES_IN_FLIGHT)
 			, m_deviceExtensions({
 					                     VK_KHR_SWAPCHAIN_EXTENSION_NAME
 			                     })
@@ -944,8 +944,6 @@ namespace Pepper::Core
 		::VkCommandBufferAllocateInfo allocInfo { };
 		::VkResult result;
 
-		m_commandBuffers.resize(VulkanEngine::MAX_FRAMES_IN_FLIGHT);
-
 		//TODO: move this to a separate function
 		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 		allocInfo.commandPool = m_commandPool;
@@ -961,10 +959,6 @@ namespace Pepper::Core
 		::VkSemaphoreCreateInfo semaphoreInfo { };
 		::VkFenceCreateInfo fenceInfo { };
 		::VkResult result;
-
-		m_imageAvailableSemaphores.resize(VulkanEngine::MAX_FRAMES_IN_FLIGHT);
-		m_renderFinishedSemaphores.resize(VulkanEngine::MAX_FRAMES_IN_FLIGHT);
-		m_inFlightFences.resize(VulkanEngine::MAX_FRAMES_IN_FLIGHT);
 
 		semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
