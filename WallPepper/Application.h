@@ -16,7 +16,7 @@ namespace Pepper::Main {
         Application();
         ~Application();
 
-        void Init();
+        void Init(Core::EngineBase::EngineType _engineType);
         void Run();
         void Clear();
     };

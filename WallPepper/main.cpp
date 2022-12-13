@@ -4,29 +4,34 @@
 
 #include "Application.h"
 
-int main()
+int main(int argc, char* argv[])
 {
-    //var declaration
-    Pepper::Main::Application app;
-    int status = EXIT_SUCCESS;
+	//unused parameters warning
+	(void) argc;
+	(void) argv;
 
-    //init
-    ::setlocale(LC_ALL, "");
-    app.Init();
+	//var declaration
+	Pepper::Main::Application app;
+	int status = EXIT_SUCCESS;
+	Pepper::Core::EngineBase::EngineType engineType = Pepper::Core::EngineBase::EngineType::Vulkan;
 
-    try
-    {
-        //run loop
-        app.Run();
-    }
-    catch (std::runtime_error &_e)
-    {
-        std::cerr << _e.what() << std::endl;
-        status = EXIT_FAILURE;
-    }
+	//init
+	::setlocale(LC_ALL, "");
+	app.Init(engineType);
 
-    //cleanup
-    app.Clear();
+	try
+	{
+		//run loop
+		app.Run();
+	}
+	catch (std::runtime_error &_e)
+	{
+		std::cerr << _e.what() << std::endl;
+		status = EXIT_FAILURE;
+	}
 
-    return status;
+	//cleanup
+	app.Clear();
+
+	return status;
 }

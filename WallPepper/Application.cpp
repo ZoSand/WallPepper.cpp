@@ -13,9 +13,10 @@ Pepper::Main::Application::Application()
 
 Pepper::Main::Application::~Application() = default;
 
-void Pepper::Main::Application::Init()
+void Pepper::Main::Application::Init(Core::EngineBase::EngineType _engineType = Core::EngineBase::EngineType::Vulkan)
 {
     m_wp = new Pepper::Impl::Wallpaper();
+	m_wp->SetEngine(_engineType);
     m_wp->Init();
 }
 

@@ -92,4 +92,6 @@ See [API.md](API.md)
 |  -h, --help   |        Show help        |                                                       |
 | -v, --version |      Show version       |                                                       |
 |  -d, --debug  |       Debug mode        |                                                       |
-| -e, --engine  |    Engine selection     |                 one of OpenGl/Vulkan                  |
+| -e, --engine  |    Engine selection*    |                 one of OpenGl/Vulkan                  |
+
+*Can be configured in the application settings

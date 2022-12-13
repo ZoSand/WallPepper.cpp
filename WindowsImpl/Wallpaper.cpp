@@ -69,9 +69,7 @@ namespace Pepper::Impl
 	{
 		::RECT wndRect;
 		::GetWindowRect(static_cast<::HWND>(Core::Window::GetWindow()), &wndRect);
-		Core::EngineBase* engine;
-		Core::Window::SetEngine(Core::EngineBase::EngineType::Vulkan);
-		engine = Core::Window::GetEngine();
+		Core::EngineBase* engine = Core::Window::GetEngine();
 		engine->Init(wndRect.right - wndRect.left, wndRect.bottom - wndRect.top);
 		switch (engine->GetType())
 		{
