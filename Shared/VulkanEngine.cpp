@@ -95,7 +95,7 @@ namespace Pepper::Core
 		(void) _width;
 		(void) _height;
 
-		auto engine = reinterpret_cast<VulkanEngine*>(glfwGetWindowUserPointer(_window));
+		auto engine = reinterpret_cast<VulkanEngine*>(::glfwGetWindowUserPointer(_window));
 		engine->m_framebufferResized = true;
 	}
 
@@ -1044,8 +1044,7 @@ namespace Pepper::Core
 		::glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 		//TODO: set GLFW_DECORATED to GLFW_FALSE
 		::glfwWindowHint(GLFW_DECORATED, GLFW_TRUE);
-		//TODO: set GLFW_VISIBLE to GLFW_FALSE to start window as hidden so that we don't have a white popup window before setting it as background
-		::glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE);
+		::glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
 
 		m_glWindow = ::glfwCreateWindow(_width, _height, "ZWP", nullptr, nullptr);
 		RUNTIME_ASSERT(m_glWindow != nullptr, "Failed to create GLFW window.")
