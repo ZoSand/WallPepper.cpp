@@ -11,9 +11,9 @@ int main(int argc, char* argv[])
 	(void) argv;
 
 	//var declaration
+	Pepper::Core::EngineBase::EngineType engineType = Pepper::Core::EngineBase::EngineType::Vulkan;
 	Pepper::Main::Application app;
 	int status = EXIT_SUCCESS;
-	Pepper::Core::EngineBase::EngineType engineType = Pepper::Core::EngineBase::EngineType::Vulkan;
 
 	//init
 	::setlocale(LC_ALL, "");

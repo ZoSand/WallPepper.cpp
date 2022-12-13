@@ -93,5 +93,7 @@ See [API.md](API.md)
 | -v, --version |      Show version       |                                                       |
 |  -d, --debug  |       Debug mode        |                                                       |
 | -e, --engine  |    Engine selection*    |                 one of OpenGl/Vulkan                  |
+| -c, --config  |   Custom config path    |            C:/Path/to/custom/config.cfg**             |
 
 *Can be configured in the application settings
+**See [Config.md](Config.md)
