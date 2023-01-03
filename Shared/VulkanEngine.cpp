@@ -48,8 +48,8 @@ namespace Pepper::Core
 			, m_swapChainImageViews()
 			, m_swapChainFramebuffers()
 			, m_vertices({
-					             {{ 0.0f,  -0.5f }, { 1.0f, 0.0f, 0.0f }},
-					             {{ 0.5f,  0.5f },  { 0.0f, 1.0f, 0.0f }},
+					             {{ 0.0f,  -0.5f }, { 1.0f, 1.0f, 1.0f }},
+					             {{ 0.5f,  0.5f },  { 1.0f, 1.0f, 1.0f }},
 					             {{ -0.5f, 0.5f },  { 0.0f, 0.0f, 1.0f }}
 			             })
 #   if PEPPER_VULKAN_VALIDATE_LAYERS
