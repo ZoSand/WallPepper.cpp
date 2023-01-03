@@ -34,6 +34,7 @@ namespace Pepper::Core
 			, m_pipelineLayout(VK_NULL_HANDLE)
 			, m_graphicsPipeline(VK_NULL_HANDLE)
 			, m_commandPool(VK_NULL_HANDLE)
+			, m_vertexBuffer(VK_NULL_HANDLE)
 			, m_currentFrame(0)
 			, m_framebufferResized(false)
 			, m_commandBuffers(MAX_FRAMES_IN_FLIGHT)
@@ -47,8 +48,8 @@ namespace Pepper::Core
 			, m_swapChainImageViews()
 			, m_swapChainFramebuffers()
 			, m_vertices({
-					             {{ 0.0f,  -0.5f }, { 1.0f, 0.0f, 0.0f }},
-					             {{ 0.5f,  0.5f },  { 0.0f, 1.0f, 0.0f }},
+					             {{ 0.0f,  -0.5f }, { 1.0f, 1.0f, 1.0f }},
+					             {{ 0.5f,  0.5f },  { 1.0f, 1.0f, 1.0f }},
 					             {{ -0.5f, 0.5f },  { 0.0f, 0.0f, 1.0f }}
 			             })
 #   if PEPPER_VULKAN_VALIDATE_LAYERS
@@ -381,6 +382,26 @@ namespace Pepper::Core
 		return shaderModule;
 	}
 
+	::uint32_t VulkanEngine::FindMemoryType(
+			::uint32_t _typeFilter,
+			::VkMemoryPropertyFlags _properties
+	                                       )
+	{
+		::VkPhysicalDeviceMemoryProperties memProperties;
+
+		::vkGetPhysicalDeviceMemoryProperties(m_physicalDevice, &memProperties);
+
+		for (::uint32_t i = 0; i < memProperties.memoryTypeCount; i++)
+		{
+			if ((_typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & _properties) == _properties)
+			{
+				return i;
+			}
+		}
+
+		RUNTIME_ASSERT(false, "Failed to find suitable memory type")
+	}
+
 	void VulkanEngine::InitShaderStageInfos(
 			::VkPipelineShaderStageCreateInfo* _pipelineInfo,
 			::VkShaderModule _shaderModule,
@@ -612,11 +633,17 @@ namespace Pepper::Core
 			::VkRenderPass _renderPass,
 			::VkFramebuffer _framebuffer,
 			::VkExtent2D _swapChainExtent,
-			::VkPipeline _graphicsPipeline
+			::VkPipeline _graphicsPipeline,
+			::VkBuffer _vertexBuffer,
+			const std::vector<Vertex>& _vertices
 	                                      )
 	{
 		::VkCommandBufferBeginInfo beginInfo { };
 		::VkRenderPassBeginInfo renderPassInfo { };
+
+		::VkBuffer vertexBuffers[] = { _vertexBuffer };
+		::VkDeviceSize offsets[] = { 0 };
+
 		::VkResult result;
 
 		::VkClearValue clearColor = {
@@ -648,7 +675,10 @@ namespace Pepper::Core
 
 		::vkCmdBeginRenderPass(_commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 		::vkCmdBindPipeline(_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, _graphicsPipeline);
-		::vkCmdDraw(_commandBuffer, 3, 1, 0, 0);
+
+		::vkCmdBindVertexBuffers(_commandBuffer, 0, 1, vertexBuffers, offsets);
+
+		::vkCmdDraw(_commandBuffer, static_cast<::uint32_t>(_vertices.size()), 1, 0, 0);
 		::vkCmdEndRenderPass(_commandBuffer);
 
 		result = ::vkEndCommandBuffer(_commandBuffer);
@@ -689,7 +719,9 @@ namespace Pepper::Core
 
 		RecordCommandBuffer(m_commandBuffers[m_currentFrame], m_renderPass, m_swapChainFramebuffers[imageIndex],
 		                    m_swapChainExtent,
-		                    m_graphicsPipeline);
+		                    m_graphicsPipeline,
+		                    m_vertexBuffer,
+							m_vertices);
 
 		//TODO: move to a separate function
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -805,7 +837,7 @@ namespace Pepper::Core
 	{
 		QueueFamilyIndices indices = FindQueueFamilies(m_physicalDevice, m_surface);
 		::VkDeviceCreateInfo deviceCreateInfo { };
-		::VkPhysicalDeviceFeatures deviceFeatures = {};
+		::VkPhysicalDeviceFeatures deviceFeatures = { };
 		::VkResult result;
 		std::vector<::VkDeviceQueueCreateInfo> queueCreateInfos;
 
@@ -813,7 +845,8 @@ namespace Pepper::Core
 		RUNTIME_ASSERT(IsDeviceSuitable(m_physicalDevice, m_deviceExtensions, m_surface),
 		               "Failed to find a suitable GPU")
 
-		InitDeviceInfos(indices, &queueCreateInfos, &deviceCreateInfo, &deviceFeatures, m_deviceExtensions, m_vkValidationLayers);
+		InitDeviceInfos(indices, &queueCreateInfos, &deviceCreateInfo, &deviceFeatures, m_deviceExtensions,
+		                m_vkValidationLayers);
 
 		result = ::vkCreateDevice(m_physicalDevice, &deviceCreateInfo, nullptr, &m_device);
 		RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to create logical device")
@@ -1102,6 +1135,48 @@ namespace Pepper::Core
 		RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to create command pool.")
 	}
 
+	void VulkanEngine::CreateVertexBuffer()
+	{
+		::VkBufferCreateInfo bufferInfo { };
+		::VkMemoryAllocateInfo allocInfo { };
+
+		::VkMemoryRequirements memRequirements;
+
+		void* data;
+
+		::VkResult result;
+
+		//TODO: move this to a separate function
+		bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+		bufferInfo.size = sizeof(m_vertices[0]) * m_vertices.size();
+		bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+		bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+		bufferInfo.flags = 0;
+
+		result = vkCreateBuffer(m_device, &bufferInfo, nullptr, &m_vertexBuffer);
+		RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to create vertex buffer.")
+
+		::vkGetBufferMemoryRequirements(m_device, m_vertexBuffer, &memRequirements);
+
+		//TODO: move this to a separate function
+		allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+		allocInfo.allocationSize = memRequirements.size;
+		allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits,
+		                                           VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
+				                                           | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+		result = ::vkAllocateMemory(m_device, &allocInfo, nullptr, &m_vertexBufferMemory);
+		RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to allocate vertex buffer memory.")
+
+		result = ::vkBindBufferMemory(m_device, m_vertexBuffer, m_vertexBufferMemory, 0);
+		RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to bind vertex buffer memory.")
+
+		result = ::vkMapMemory(m_device, m_vertexBufferMemory, 0, bufferInfo.size, 0, &data);
+		RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to map vertex buffer memory.")
+		memcpy(data, m_vertices.data(), (size_t) bufferInfo.size);
+		::vkUnmapMemory(m_device, m_vertexBufferMemory);
+	}
+
 	void VulkanEngine::CreateCommandBuffers()
 	{
 		::VkCommandBufferAllocateInfo allocInfo { };
@@ -1177,6 +1252,7 @@ namespace Pepper::Core
 		CreateGraphicsPipeline();
 		CreateFramebuffers();
 		CreateCommandPool();
+		CreateVertexBuffer();
 		CreateCommandBuffers();
 		CreateSyncObjects();
 	}
@@ -1193,6 +1269,9 @@ namespace Pepper::Core
 		::vkDeviceWaitIdle(m_device);
 
 		CleanupSwapChain();
+
+		::vkDestroyBuffer(m_device, m_vertexBuffer, nullptr);
+		::vkFreeMemory(m_device, m_vertexBufferMemory, nullptr);
 
 		::vkDestroyPipeline(m_device, m_graphicsPipeline, nullptr);
 		::vkDestroyPipelineLayout(m_device, m_pipelineLayout, nullptr);

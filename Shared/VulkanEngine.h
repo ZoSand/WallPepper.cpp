@@ -110,6 +110,8 @@ namespace Pepper::Core
 		::VkPipelineLayout m_pipelineLayout;
 		::VkPipeline m_graphicsPipeline;
 		::VkCommandPool m_commandPool;
+		::VkBuffer m_vertexBuffer;
+		::VkDeviceMemory m_vertexBufferMemory;
 
 		::uint32_t m_currentFrame;
 
@@ -137,7 +139,21 @@ namespace Pepper::Core
 				::VkDebugUtilsMessageSeverityFlagBitsEXT _messageSeverity,
 				::VkDebugUtilsMessageTypeFlagsEXT _messageType,
 				const ::VkDebugUtilsMessengerCallbackDataEXT* _pCallbackData,
-				void* _pUserData);
+				void* _pUserData
+		                                                     );
+
+		static ::VkResult CreateDebugUtilsMessengerEXT(
+				::VkInstance _instance,
+				const ::VkDebugUtilsMessengerCreateInfoEXT* _pCreateInfo,
+				const ::VkAllocationCallbacks* _pAllocator,
+				::VkDebugUtilsMessengerEXT* _pDebugMessenger
+		                                              );
+
+		static void DestroyDebugUtilsMessengerEXT(
+				::VkInstance _instance,
+				::VkDebugUtilsMessengerEXT _debugMessenger,
+				::VkAllocationCallbacks* _pAllocator
+		                                         );
 
 		static void FramebufferResizeCallback(
 				GLFWwindow* _window,
@@ -192,6 +208,23 @@ namespace Pepper::Core
 				::VkDevice _device
 		                                                     );
 
+		::uint32_t FindMemoryType(
+				::uint32_t _typeFilter,
+				::VkMemoryPropertyFlags _properties
+		                         );
+
+		static void RecordCommandBuffer(
+				::VkCommandBuffer _commandBuffer,
+				::VkRenderPass _renderPass,
+				::VkFramebuffer _framebuffer,
+				::VkExtent2D _swapChainExtent,
+				::VkPipeline _graphicsPipeline,
+				::VkBuffer _vertexBuffer,
+				const std::vector<Vertex>& _vertices
+		                               );
+
+		void DrawFrame();
+
 #pragma endregion Utils
 
 #pragma region Info Initializers
@@ -244,33 +277,6 @@ namespace Pepper::Core
 
 #pragma endregion Info Initializers
 
-#pragma region Utils
-
-		static ::VkResult CreateDebugUtilsMessengerEXT(
-				::VkInstance _instance,
-				const ::VkDebugUtilsMessengerCreateInfoEXT* _pCreateInfo,
-				const ::VkAllocationCallbacks* _pAllocator,
-				::VkDebugUtilsMessengerEXT* _pDebugMessenger
-		                                       );
-
-		static void DestroyDebugUtilsMessengerEXT(
-				::VkInstance _instance,
-				::VkDebugUtilsMessengerEXT _debugMessenger,
-				::VkAllocationCallbacks* _pAllocator
-		                                  );
-
-		static void RecordCommandBuffer(
-				::VkCommandBuffer _commandBuffer,
-				::VkRenderPass _renderPass,
-				::VkFramebuffer _framebuffer,
-				::VkExtent2D _swapChainExtent,
-				::VkPipeline _graphicsPipeline
-		                               );
-
-		void DrawFrame();
-
-#pragma endregion Utils
-
 #pragma region Instance Initializers
 
 		static std::vector<const char*> GetRequiredExtensions();
@@ -302,6 +308,8 @@ namespace Pepper::Core
 		void CreateFramebuffers();
 
 		void CreateCommandPool();
+
+		void CreateVertexBuffer();
 
 		void CreateCommandBuffers();
 
