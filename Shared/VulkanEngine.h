@@ -134,10 +134,10 @@ namespace Pepper::Core
 #pragma region Utils
 
 		static VKAPI_ATTR ::VkBool32 VKAPI_CALL DebugCallback(
-				::VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-				::VkDebugUtilsMessageTypeFlagsEXT messageType,
-				const ::VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-				void* pUserData);
+				::VkDebugUtilsMessageSeverityFlagBitsEXT _messageSeverity,
+				::VkDebugUtilsMessageTypeFlagsEXT _messageType,
+				const ::VkDebugUtilsMessengerCallbackDataEXT* _pCallbackData,
+				void* _pUserData);
 
 		static void FramebufferResizeCallback(
 				GLFWwindow* _window,
@@ -171,7 +171,7 @@ namespace Pepper::Core
 		                                                               );
 
 		NO_DISCARD static VkSurfaceFormatKHR ChooseSwapSurfaceFormat(
-				const std::vector<VkSurfaceFormatKHR> &availableFormats
+				const std::vector<VkSurfaceFormatKHR> &_availableFormats
 		                                                            );
 
 		NO_DISCARD static ::VkPresentModeKHR ChooseSwapPresentMode(
@@ -184,7 +184,7 @@ namespace Pepper::Core
 		                                               );
 
 		NO_DISCARD static std::vector<char> ReadShaderFile(
-				const std::string &filename
+				const std::string &_filename
 		                                                  );
 
 		NO_DISCARD static ::VkShaderModule CreateShaderModule(
@@ -212,7 +212,7 @@ namespace Pepper::Core
 				QueueFamilyIndices _indices,
 				std::vector<::VkDeviceQueueCreateInfo>* _queueCreateInfos,
 				::VkDeviceCreateInfo* _deviceCreateInfo,
-				::VkPhysicalDeviceFeatures* deviceFeatures,
+				::VkPhysicalDeviceFeatures* _deviceFeatures,
 				const std::vector<const char*> &_deviceExtensions,
 				const std::vector<const char*> &_validationLayers = { }
 		                           );

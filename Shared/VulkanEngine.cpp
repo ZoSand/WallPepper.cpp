@@ -18,6 +18,7 @@ namespace Pepper::Core
 	VulkanEngine::VulkanEngine()
 			: m_glWindow(VK_NULL_HANDLE)
 			, m_vkInstance(VK_NULL_HANDLE)
+			, m_debugMessenger(VK_NULL_HANDLE)
 			, m_physicalDevice(VK_NULL_HANDLE)
 			, m_device(VK_NULL_HANDLE)
 			, m_graphicsQueue(VK_NULL_HANDLE)
@@ -112,15 +113,15 @@ namespace Pepper::Core
 	}
 
 	::VkBool32 VulkanEngine::DebugCallback(
-			::VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-			::VkDebugUtilsMessageTypeFlagsEXT messageType,
-			const ::VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-			void* pUserData
+			::VkDebugUtilsMessageSeverityFlagBitsEXT _messageSeverity,
+			::VkDebugUtilsMessageTypeFlagsEXT _messageType,
+			const ::VkDebugUtilsMessengerCallbackDataEXT* _pCallbackData,
+			void* _pUserData
 	                                      )
 	{
-		if (messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
+		if (_messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
 		{
-			std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
+			std::cerr << "validation layer: " << _pCallbackData->pMessage << std::endl;
 		}
 
 		return VK_FALSE;
