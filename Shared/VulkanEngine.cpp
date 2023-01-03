@@ -35,6 +35,7 @@ namespace Pepper::Core
 			, m_graphicsPipeline(VK_NULL_HANDLE)
 			, m_commandPool(VK_NULL_HANDLE)
 			, m_vertexBuffer(VK_NULL_HANDLE)
+			, m_vertexBufferMemory(VK_NULL_HANDLE)
 			, m_currentFrame(0)
 			, m_framebufferResized(false)
 			, m_commandBuffers(MAX_FRAMES_IN_FLIGHT)
@@ -120,6 +121,9 @@ namespace Pepper::Core
 			void* _pUserData
 	                                      )
 	{
+		(void)_pUserData;
+		(void)_messageType;
+
 		if (_messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
 		{
 			std::cerr << "validation layer: " << _pCallbackData->pMessage << std::endl;
@@ -635,7 +639,7 @@ namespace Pepper::Core
 			::VkExtent2D _swapChainExtent,
 			::VkPipeline _graphicsPipeline,
 			::VkBuffer _vertexBuffer,
-			const std::vector<Vertex>& _vertices
+			const std::vector<Vertex> &_vertices
 	                                      )
 	{
 		::VkCommandBufferBeginInfo beginInfo { };
@@ -721,7 +725,7 @@ namespace Pepper::Core
 		                    m_swapChainExtent,
 		                    m_graphicsPipeline,
 		                    m_vertexBuffer,
-							m_vertices);
+		                    m_vertices);
 
 		//TODO: move to a separate function
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
