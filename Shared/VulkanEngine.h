@@ -321,8 +321,8 @@ namespace Pepper::Core
 		~VulkanEngine() override;
 
 		void Init(
-				int,
-				int
+				int _width,
+				int _height
 		         ) override;
 
 		void Update() override;
