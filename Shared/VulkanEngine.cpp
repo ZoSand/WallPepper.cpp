@@ -34,6 +34,7 @@ namespace Pepper::Core
 			, m_graphicsPipeline(VK_NULL_HANDLE)
 			, m_commandPool(VK_NULL_HANDLE)
 			, m_currentFrame(0)
+			, m_framebufferResized(false)
 			, m_commandBuffers(MAX_FRAMES_IN_FLIGHT)
 			, m_imageAvailableSemaphores(MAX_FRAMES_IN_FLIGHT)
 			, m_renderFinishedSemaphores(MAX_FRAMES_IN_FLIGHT)
