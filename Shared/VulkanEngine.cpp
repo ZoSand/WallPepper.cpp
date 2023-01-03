@@ -45,16 +45,41 @@ namespace Pepper::Core
 			, m_swapChainImages()
 			, m_swapChainImageViews()
 			, m_swapChainFramebuffers()
+			, m_vertices({
+					             {{ 0.0f,  -0.5f }, { 1.0f, 0.0f, 0.0f }},
+					             {{ 0.5f,  0.5f },  { 0.0f, 1.0f, 0.0f }},
+					             {{ -0.5f, 0.5f },  { 0.0f, 0.0f, 1.0f }}
+			             })
 #   if PEPPER_VULKAN_VALIDATE_LAYERS
 			, m_vkValidationLayers({
-										   "VK_LAYER_KHRONOS_validation"
-								   })
+					                       "VK_LAYER_KHRONOS_validation"
+			                       })
 #   else
-			, m_vkValidationLayers()
+	, m_vkValidationLayers()
 #   endif
 	{}
 
 	VulkanEngine::~VulkanEngine() = default;
+
+	std::vector<const char*> VulkanEngine::GetRequiredExtensions()
+	{
+		uint32_t glfwExtensionCount = 0;
+		const char** glfwExtensions;
+		std::vector<const char*> extensions;
+
+		glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+		extensions.reserve(glfwExtensionCount + 1);
+		for (uint32_t i = 0; i < glfwExtensionCount; ++i)
+		{
+			extensions.push_back(glfwExtensions[i]);
+		}
+
+#   if PEPPER_VULKAN_VALIDATE_LAYERS
+		extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+#   endif
+
+		return extensions;
+	}
 
 	void VulkanEngine::InitValidationLayers()
 	{
@@ -84,6 +109,21 @@ namespace Pepper::Core
 			RUNTIME_ASSERT(layerFound, "Validation layer not found")
 		}
 		//TODO: add Message callback handling
+	}
+
+	::VkBool32 VulkanEngine::DebugCallback(
+			::VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+			::VkDebugUtilsMessageTypeFlagsEXT messageType,
+			const ::VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+			void* pUserData
+	                                      )
+	{
+		if (messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
+		{
+			std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
+		}
+
+		return VK_FALSE;
 	}
 
 	void VulkanEngine::FramebufferResizeCallback(
@@ -358,9 +398,7 @@ namespace Pepper::Core
 			const std::vector<const char*> &_validationLayers
 	                                    )
 	{
-		::uint32_t glfwExtensionCount = 0;
-		const char** glfwExtensions;
-		glfwExtensions = ::glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+		std::vector<const char*> extensions = GetRequiredExtensions();
 
 		_appInfo->sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 		_appInfo->pApplicationName = "ZWP";
@@ -371,8 +409,8 @@ namespace Pepper::Core
 
 		_createInfo->sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 		_createInfo->pApplicationInfo = _appInfo;
-		_createInfo->enabledExtensionCount = glfwExtensionCount;
-		_createInfo->ppEnabledExtensionNames = glfwExtensions;
+		_createInfo->enabledExtensionCount = static_cast<uint32_t>(extensions.size());
+		_createInfo->ppEnabledExtensionNames = extensions.data();
 		_createInfo->enabledLayerCount = static_cast<::uint32_t>(_validationLayers.size());
 		_createInfo->ppEnabledLayerNames = _validationLayers.data();
 	}
@@ -381,12 +419,12 @@ namespace Pepper::Core
 			QueueFamilyIndices _indices,
 			std::vector<::VkDeviceQueueCreateInfo>* _queueCreateInfos,
 			::VkDeviceCreateInfo* _deviceCreateInfo,
+			::VkPhysicalDeviceFeatures* _deviceFeatures,
 			const std::vector<const char*> &_deviceExtensions,
 			const std::vector<const char*> &_validationLayers
 	                                  )
 	{
 		float queuePriority = 1.0f;
-		::VkPhysicalDeviceFeatures deviceFeatures { };
 		std::set<::uint32_t> queueFamilies = {
 				_indices.graphicsFamily.value(),
 				_indices.presentFamily.value()
@@ -405,7 +443,7 @@ namespace Pepper::Core
 		_deviceCreateInfo->sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 		_deviceCreateInfo->queueCreateInfoCount = static_cast<::uint32_t>(_queueCreateInfos->size());
 		_deviceCreateInfo->pQueueCreateInfos = _queueCreateInfos->data();
-		_deviceCreateInfo->pEnabledFeatures = &deviceFeatures;
+		_deviceCreateInfo->pEnabledFeatures = _deviceFeatures;
 		_deviceCreateInfo->enabledExtensionCount = static_cast<::uint32_t>(_deviceExtensions.size());
 		_deviceCreateInfo->ppEnabledExtensionNames = _deviceExtensions.data();
 		_deviceCreateInfo->enabledLayerCount = static_cast<::uint32_t>(_validationLayers.size());
@@ -533,6 +571,41 @@ namespace Pepper::Core
 		_subpassDependency->dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 	}
 
+
+	::VkResult VulkanEngine::CreateDebugUtilsMessengerEXT(
+			::VkInstance _instance,
+			const ::VkDebugUtilsMessengerCreateInfoEXT* _pCreateInfo,
+			const ::VkAllocationCallbacks* _pAllocator,
+			::VkDebugUtilsMessengerEXT* _pDebugMessenger
+	                                                     )
+	{
+		auto func = (::PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(_instance,
+		                                                                         "vkCreateDebugUtilsMessengerEXT");
+		if (func != nullptr)
+		{
+			return func(_instance, _pCreateInfo, _pAllocator, _pDebugMessenger);
+		}
+		else
+		{
+			return VK_ERROR_EXTENSION_NOT_PRESENT;
+		}
+	}
+
+	void VulkanEngine::DestroyDebugUtilsMessengerEXT(
+			::VkInstance _instance,
+			::VkDebugUtilsMessengerEXT _debugMessenger,
+			::VkAllocationCallbacks* _pAllocator
+	                                                )
+	{
+		auto func = reinterpret_cast<::PFN_vkDestroyDebugUtilsMessengerEXT>(
+				::vkGetInstanceProcAddr(_instance, "vkDestroyDebugUtilsMessengerEXT")
+		);
+		if (func != nullptr)
+		{
+			func(_instance, _debugMessenger, _pAllocator);
+		}
+	}
+
 	void VulkanEngine::RecordCommandBuffer(
 			::VkCommandBuffer _commandBuffer,
 			::VkRenderPass _renderPass,
@@ -604,7 +677,8 @@ namespace Pepper::Core
 			RecreateSwapChain();
 			return;
 		}
-		else {
+		else
+		{
 			RUNTIME_ASSERT(result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR, "Failed to acquire swap chain image!")
 		}
 
@@ -665,6 +739,32 @@ namespace Pepper::Core
 		RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to create Instance")
 	}
 
+	void VulkanEngine::SetupDebugMessenger()
+	{
+#if PEPPER_VULKAN_VALIDATE_LAYERS
+		::VkDebugUtilsMessengerCreateInfoEXT createInfo { };
+		::VkResult result;
+
+		createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+		createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT
+				| VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+		createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT
+				| VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+		createInfo.pfnUserCallback = DebugCallback;
+		createInfo.pUserData = nullptr;
+
+		result = CreateDebugUtilsMessengerEXT(m_vkInstance, &createInfo, nullptr, &m_debugMessenger);
+		RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to set up debug messenger!")
+#endif
+	}
+
+	void VulkanEngine::DestroyDebugMessenger()
+	{
+#if PEPPER_VULKAN_VALIDATE_LAYERS
+		DestroyDebugUtilsMessengerEXT(m_vkInstance, m_debugMessenger, nullptr);
+#endif
+	}
+
 	void VulkanEngine::CreateSurface()
 	{
 		::VkResult result;
@@ -704,6 +804,7 @@ namespace Pepper::Core
 	{
 		QueueFamilyIndices indices = FindQueueFamilies(m_physicalDevice, m_surface);
 		::VkDeviceCreateInfo deviceCreateInfo { };
+		::VkPhysicalDeviceFeatures deviceFeatures = {};
 		::VkResult result;
 		std::vector<::VkDeviceQueueCreateInfo> queueCreateInfos;
 
@@ -711,7 +812,7 @@ namespace Pepper::Core
 		RUNTIME_ASSERT(IsDeviceSuitable(m_physicalDevice, m_deviceExtensions, m_surface),
 		               "Failed to find a suitable GPU")
 
-		InitDeviceInfos(indices, &queueCreateInfos, &deviceCreateInfo, m_deviceExtensions, m_vkValidationLayers);
+		InitDeviceInfos(indices, &queueCreateInfos, &deviceCreateInfo, &deviceFeatures, m_deviceExtensions, m_vkValidationLayers);
 
 		result = ::vkCreateDevice(m_physicalDevice, &deviceCreateInfo, nullptr, &m_device);
 		RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to create logical device")
@@ -762,7 +863,8 @@ namespace Pepper::Core
 		int width = 0, height = 0;
 		::glfwGetFramebufferSize(m_glWindow, &width, &height);
 
-		while (width == 0 || height == 0) {
+		while (width == 0 || height == 0)
+		{
 			::glfwGetFramebufferSize(m_glWindow, &width, &height);
 			::glfwWaitEvents();
 		}
@@ -818,6 +920,8 @@ namespace Pepper::Core
 		::VkShaderModule vertShaderModule = CreateShaderModule(vertShaderCode, m_device);
 		::VkShaderModule fragShaderModule = CreateShaderModule(fragShaderCode, m_device);
 
+		auto bindingDescription = Vertex::GetBindingDescription();
+		auto attributeDescriptions = Vertex::GetAttributeDescriptions();
 
 		::VkResult result;
 
@@ -836,6 +940,10 @@ namespace Pepper::Core
 		vertexInputInfo.pVertexBindingDescriptions = nullptr; // Optional
 		vertexInputInfo.vertexAttributeDescriptionCount = 0;
 		vertexInputInfo.pVertexAttributeDescriptions = nullptr; // Optional
+		vertexInputInfo.vertexBindingDescriptionCount = 1;
+		vertexInputInfo.vertexAttributeDescriptionCount = static_cast<::uint32_t>(attributeDescriptions.size());
+		vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+		vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
 		//TODO: move this to a separate function
 		::VkPipelineInputAssemblyStateCreateInfo inputAssembly { };
@@ -1058,6 +1166,7 @@ namespace Pepper::Core
 #   endif
 
 		InitInstance();
+		SetupDebugMessenger();
 		CreateSurface();
 		PickPhysicalDevice();
 		CreateLogicalDevice();
@@ -1101,6 +1210,11 @@ namespace Pepper::Core
 		::vkDestroyDevice(m_device, nullptr);
 
 		::vkDestroySurfaceKHR(m_vkInstance, m_surface, nullptr);
+
+#if PEPPER_VULKAN_VALIDATE_LAYERS
+		DestroyDebugMessenger();
+#endif
+
 		::vkDestroyInstance(m_vkInstance, nullptr);
 
 		::glfwDestroyWindow(m_glWindow);

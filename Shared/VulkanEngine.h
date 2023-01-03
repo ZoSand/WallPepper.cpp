@@ -17,9 +17,14 @@
 #   include <glfw/glfw3.h>
 #   include <GLFW/glfw3native.h>
 
+//GLM dependencies
+#   include <glm/vec2.hpp>
+#   include <glm/vec3.hpp>
+
 //other dependencies
-#   include <vector>
+#   include <array>
 #   include <optional>
+#   include <vector>
 
 namespace Pepper::Core
 {
@@ -30,9 +35,69 @@ namespace Pepper::Core
 		static constexpr int MAX_FRAMES_IN_FLIGHT = 2;
 #pragma endregion
 
+#pragma region Structures Definitions
+
+		struct QueueFamilyIndices
+		{
+			std::optional<::uint32_t> graphicsFamily;
+			std::optional<::uint32_t> presentFamily;
+
+			NO_DISCARD_UNUSED inline bool IsComplete() const
+			{
+				return graphicsFamily.has_value() && presentFamily.has_value();
+			}
+		};
+
+		struct SwapChainSupportDetails
+		{
+			::VkSurfaceCapabilitiesKHR capabilities;
+			std::vector<::VkSurfaceFormatKHR> formats;
+			std::vector<::VkPresentModeKHR> presentModes;
+		};
+
+		struct Vertex
+		{
+			//TODO: switch to vec3
+			glm::vec2 pos;
+			glm::vec3 color;
+
+
+			static ::VkVertexInputBindingDescription GetBindingDescription()
+			{
+				::VkVertexInputBindingDescription bindingDescription { };
+
+				bindingDescription.binding = 0;
+				bindingDescription.stride = sizeof(Vertex);
+				bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+				return bindingDescription;
+			}
+
+			static std::array<::VkVertexInputAttributeDescription, 2> GetAttributeDescriptions()
+			{
+				std::array<::VkVertexInputAttributeDescription, 2> attributeDescriptions { };
+
+				attributeDescriptions[0].binding = 0;
+				attributeDescriptions[0].location = 0;
+				//TODO: switch to vec3
+				attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
+				attributeDescriptions[0].offset = offsetof(Vertex, pos);
+
+				attributeDescriptions[1].binding = 0;
+				attributeDescriptions[1].location = 1;
+				attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+				attributeDescriptions[1].offset = offsetof(Vertex, color);
+
+				return attributeDescriptions;
+			}
+		};
+
+#pragma endregion Structures Definitions
+
 #pragma region Members
 		::GLFWwindow* m_glWindow;
 		::VkInstance m_vkInstance;
+		::VkDebugUtilsMessengerEXT m_debugMessenger;
 		::VkPhysicalDevice m_physicalDevice;
 		::VkDevice m_device;
 		::VkQueue m_graphicsQueue;
@@ -62,31 +127,17 @@ namespace Pepper::Core
 
 		std::vector<const char*> m_vkValidationLayers;
 
+		std::vector<Vertex> m_vertices;
+
 #pragma endregion Members
 
-#pragma region Structures Definitions
-
-		struct QueueFamilyIndices
-		{
-			std::optional<::uint32_t> graphicsFamily;
-			std::optional<::uint32_t> presentFamily;
-
-			NO_DISCARD_UNUSED inline bool IsComplete() const
-			{
-				return graphicsFamily.has_value() && presentFamily.has_value();
-			}
-		};
-
-		struct SwapChainSupportDetails
-		{
-			::VkSurfaceCapabilitiesKHR capabilities;
-			std::vector<::VkSurfaceFormatKHR> formats;
-			std::vector<::VkPresentModeKHR> presentModes;
-		};
-
-#pragma endregion Structures Definitions
-
 #pragma region Utils
+
+		static VKAPI_ATTR ::VkBool32 VKAPI_CALL DebugCallback(
+				::VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+				::VkDebugUtilsMessageTypeFlagsEXT messageType,
+				const ::VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+				void* pUserData);
 
 		static void FramebufferResizeCallback(
 				GLFWwindow* _window,
@@ -161,6 +212,7 @@ namespace Pepper::Core
 				QueueFamilyIndices _indices,
 				std::vector<::VkDeviceQueueCreateInfo>* _queueCreateInfos,
 				::VkDeviceCreateInfo* _deviceCreateInfo,
+				::VkPhysicalDeviceFeatures* deviceFeatures,
 				const std::vector<const char*> &_deviceExtensions,
 				const std::vector<const char*> &_validationLayers = { }
 		                           );
@@ -194,6 +246,19 @@ namespace Pepper::Core
 
 #pragma region Utils
 
+		static ::VkResult CreateDebugUtilsMessengerEXT(
+				::VkInstance _instance,
+				const ::VkDebugUtilsMessengerCreateInfoEXT* _pCreateInfo,
+				const ::VkAllocationCallbacks* _pAllocator,
+				::VkDebugUtilsMessengerEXT* _pDebugMessenger
+		                                       );
+
+		static void DestroyDebugUtilsMessengerEXT(
+				::VkInstance _instance,
+				::VkDebugUtilsMessengerEXT _debugMessenger,
+				::VkAllocationCallbacks* _pAllocator
+		                                  );
+
 		static void RecordCommandBuffer(
 				::VkCommandBuffer _commandBuffer,
 				::VkRenderPass _renderPass,
@@ -208,9 +273,13 @@ namespace Pepper::Core
 
 #pragma region Instance Initializers
 
+		static std::vector<const char*> GetRequiredExtensions();
+
 		void InitValidationLayers();
 
 		void InitInstance();
+
+		void SetupDebugMessenger();
 
 		void CreateSurface();
 
@@ -239,6 +308,12 @@ namespace Pepper::Core
 		void CreateSyncObjects();
 
 #pragma endregion Instance Initializers
+
+#pragma region Instance Cleaner
+
+		void DestroyDebugMessenger();
+
+#pragma endregion Instance Cleaner
 
 	public:
 		VulkanEngine();
