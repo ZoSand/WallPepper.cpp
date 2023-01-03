@@ -36,3 +36,4 @@
 # Jetbrains Clion-related
 *.idea
 *cmake-build-*
+/Build/*
