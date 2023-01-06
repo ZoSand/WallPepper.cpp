@@ -55,10 +55,10 @@ namespace Pepper::Core
 			             })
 #   if PEPPER_VULKAN_VALIDATE_LAYERS
 			, m_vkValidationLayers({
-					                       "VK_LAYER_KHRONOS_validation"
-			                       })
+										   "VK_LAYER_KHRONOS_validation"
+								   })
 #   else
-	, m_vkValidationLayers()
+			, m_vkValidationLayers()
 #   endif
 	{}
 
@@ -86,6 +86,7 @@ namespace Pepper::Core
 
 	void VulkanEngine::InitValidationLayers()
 	{
+#   if PEPPER_VULKAN_VALIDATE_LAYERS
 		::uint32_t layerCount;
 		std::vector<::VkLayerProperties> availableLayers(0);
 		::VkResult result;
@@ -112,6 +113,9 @@ namespace Pepper::Core
 			RUNTIME_ASSERT(layerFound, "Validation layer not found")
 		}
 		//TODO: add Message callback handling
+#   else
+		(void) m_vkValidationLayers;
+#   endif
 	}
 
 	::VkBool32 VulkanEngine::DebugCallback(
@@ -121,8 +125,8 @@ namespace Pepper::Core
 			void* _pUserData
 	                                      )
 	{
-		(void)_pUserData;
-		(void)_messageType;
+		(void) _pUserData;
+		(void) _messageType;
 
 		if (_messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
 		{
@@ -792,6 +796,8 @@ namespace Pepper::Core
 
 		result = CreateDebugUtilsMessengerEXT(m_vkInstance, &createInfo, nullptr, &m_debugMessenger);
 		RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to set up debug messenger!")
+#else
+		(void) m_debugMessenger;
 #endif
 	}
 
@@ -799,6 +805,8 @@ namespace Pepper::Core
 	{
 #if PEPPER_VULKAN_VALIDATE_LAYERS
 		DestroyDebugUtilsMessengerEXT(m_vkInstance, m_debugMessenger, nullptr);
+#else
+		(void) m_debugMessenger;
 #endif
 	}
 
@@ -1241,9 +1249,7 @@ namespace Pepper::Core
 		::glfwSetWindowUserPointer(m_glWindow, this);
 		::glfwSetFramebufferSizeCallback(m_glWindow, VulkanEngine::FramebufferResizeCallback);
 
-#   if PEPPER_VULKAN_VALIDATE_LAYERS
 		InitValidationLayers();
-#   endif
 
 		InitInstance();
 		SetupDebugMessenger();
@@ -1295,9 +1301,7 @@ namespace Pepper::Core
 
 		::vkDestroySurfaceKHR(m_vkInstance, m_surface, nullptr);
 
-#if PEPPER_VULKAN_VALIDATE_LAYERS
 		DestroyDebugMessenger();
-#endif
 
 		::vkDestroyInstance(m_vkInstance, nullptr);
 
