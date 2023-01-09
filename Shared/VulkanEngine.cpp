@@ -763,7 +763,7 @@ namespace Pepper::Core
 			                    m_swapChainExtent,
 			                    m_graphicsPipeline,
 			                    m_vertexBuffer,
-			                    m_drawables.back().GetVertices());
+			                    m_drawables.back()->GetVertices());
 			m_drawables.pop_back();
 		}
 
@@ -1203,10 +1203,10 @@ namespace Pepper::Core
 		bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 		bufferInfo.flags = 0;
 
-		for (const Drawable &d: m_drawables)
+		for (const Drawable *d: m_drawables)
 		{
-			bufferInfo.size += sizeof(d.GetVertices()[0]) * d.GetVertices().size();
-			for (const Vertex& v: d.GetVertices())
+			bufferInfo.size += sizeof(d->GetVertices()[0]) * d->GetVertices().size();
+			for (const Vertex& v: d->GetVertices())
 			{
 				vertices.push_back(v);
 			}
@@ -1340,7 +1340,7 @@ namespace Pepper::Core
 		m_clearColor = { _r, _g, _b, _a };
 	}
 
-	void VulkanEngine::Draw(Drawable &_drawable)
+	void VulkanEngine::Draw(Drawable *_drawable)
 	{
 		m_drawables.push_back(_drawable);
 	}

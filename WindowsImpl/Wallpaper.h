@@ -38,7 +38,7 @@ namespace Pepper::Impl
 
 	    void Render();
 
-	    void Draw(Core::Drawable& drawable);
+	    void Draw(Core::Drawable* drawable);
 
 	    void Clear(
 			    float _r,

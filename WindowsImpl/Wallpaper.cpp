@@ -103,7 +103,7 @@ namespace Pepper::Impl
 		Core::Window::GetEngine()->Render();
 	}
 
-	void Wallpaper::Draw(Core::Drawable& drawable)
+	void Wallpaper::Draw(Core::Drawable* drawable)
 	{
 		Core::Window::GetEngine()->Draw(drawable);
 	}

@@ -310,7 +310,7 @@ namespace Pepper::Core
 				float _a = 1.0f
 		          ) override;
 
-		void Draw(Drawable &_drawable) override;
+		void Draw(Drawable *_drawable) override;
 
 		void Render() override;
 

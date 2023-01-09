@@ -23,7 +23,7 @@ void Pepper::Main::Application::Init(Core::EngineBase::EngineType _engineType = 
 
 void Pepper::Main::Application::Run()
 {
-	Core::Drawable d = Core::Drawable();
+	auto* d = new Core::Drawable();
     while (!m_wp->ShouldClose())
     {
         m_wp->Update();

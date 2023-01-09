@@ -14,7 +14,7 @@ namespace Pepper::Core
     class EngineBase
     {
     protected:
-		std::vector<Drawable> m_drawables;
+		std::vector<Drawable*> m_drawables;
     public:
         enum class EngineType
         {
@@ -37,7 +37,7 @@ namespace Pepper::Core
 
 		MAYBE_UNUSED virtual void Clear(float, float, float, float) = 0;
 
-	    MAYBE_UNUSED virtual void Draw(Drawable&) = 0;
+	    MAYBE_UNUSED virtual void Draw(Drawable*) = 0;
 
 		MAYBE_UNUSED virtual void Render() = 0;
 
