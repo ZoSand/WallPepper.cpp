@@ -98,4 +98,24 @@ namespace Pepper::Impl
 		Core::Window::Shutdown();
 	}
 
+	void Wallpaper::Render()
+	{
+		Core::Window::GetEngine()->Render();
+	}
+
+	void Wallpaper::Draw(Core::Drawable& drawable)
+	{
+		Core::Window::GetEngine()->Draw(drawable);
+	}
+
+	void Wallpaper::Clear(
+			float _r,
+			float _g,
+			float _b,
+			float _a
+	                     )
+	{
+		Core::Window::GetEngine()->Clear(_r, _g, _b, _a);
+	}
+
 }

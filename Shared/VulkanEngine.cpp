@@ -48,17 +48,20 @@ namespace Pepper::Core
 			, m_swapChainImages()
 			, m_swapChainImageViews()
 			, m_swapChainFramebuffers()
-			, m_vertices({
-					             {{ 0.0f,  -0.5f }, { 1.0f, 1.0f, 1.0f }},
-					             {{ 0.5f,  0.5f },  { 1.0f, 1.0f, 1.0f }},
-					             {{ -0.5f, 0.5f },  { 0.0f, 0.0f, 1.0f }}
-			             })
+			, m_clearColor({
+					               {
+							               0.0f,
+							               0.0f,
+							               0.0f,
+							               1.0f
+					               }
+			               })
 #   if PEPPER_VULKAN_VALIDATE_LAYERS
 			, m_vkValidationLayers({
-										   "VK_LAYER_KHRONOS_validation"
-								   })
+					                       "VK_LAYER_KHRONOS_validation"
+			                       })
 #   else
-			, m_vkValidationLayers()
+	, m_vkValidationLayers()
 #   endif
 	{}
 
@@ -116,6 +119,35 @@ namespace Pepper::Core
 #   else
 		(void) m_vkValidationLayers;
 #   endif
+	}
+
+	::VkVertexInputBindingDescription VulkanEngine::GetVertexBindingDescription()
+	{
+		::VkVertexInputBindingDescription bindingDescription { };
+
+		bindingDescription.binding = 0;
+		bindingDescription.stride = sizeof(Vertex);
+		bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+		return bindingDescription;
+	}
+
+	std::array<::VkVertexInputAttributeDescription, 2> VulkanEngine::GetVertexAttributeDescriptions()
+	{
+		std::array<::VkVertexInputAttributeDescription, 2> attributeDescriptions { };
+
+		attributeDescriptions[0].binding = 0;
+		attributeDescriptions[0].location = 0;
+		//TODO: switch to vec3
+		attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
+		attributeDescriptions[0].offset = offsetof(Vertex, position);
+
+		attributeDescriptions[1].binding = 0;
+		attributeDescriptions[1].location = 1;
+		attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+		attributeDescriptions[1].offset = offsetof(Vertex, color);
+
+		return attributeDescriptions;
 	}
 
 	::VkBool32 VulkanEngine::DebugCallback(
@@ -725,11 +757,15 @@ namespace Pepper::Core
 
 		::vkResetCommandBuffer(m_commandBuffers[m_currentFrame], 0);
 
-		RecordCommandBuffer(m_commandBuffers[m_currentFrame], m_renderPass, m_swapChainFramebuffers[imageIndex],
-		                    m_swapChainExtent,
-		                    m_graphicsPipeline,
-		                    m_vertexBuffer,
-		                    m_vertices);
+		while (!m_drawables.empty())
+		{
+			RecordCommandBuffer(m_commandBuffers[m_currentFrame], m_renderPass, m_swapChainFramebuffers[imageIndex],
+			                    m_swapChainExtent,
+			                    m_graphicsPipeline,
+			                    m_vertexBuffer,
+			                    m_drawables.back().GetVertices());
+			m_drawables.pop_back();
+		}
 
 		//TODO: move to a separate function
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -966,8 +1002,8 @@ namespace Pepper::Core
 		::VkShaderModule vertShaderModule = CreateShaderModule(vertShaderCode, m_device);
 		::VkShaderModule fragShaderModule = CreateShaderModule(fragShaderCode, m_device);
 
-		auto bindingDescription = Vertex::GetBindingDescription();
-		auto attributeDescriptions = Vertex::GetAttributeDescriptions();
+		auto bindingDescription = GetVertexBindingDescription();
+		auto attributeDescriptions = GetVertexAttributeDescriptions();
 
 		::VkResult result;
 
@@ -1154,16 +1190,31 @@ namespace Pepper::Core
 
 		::VkMemoryRequirements memRequirements;
 
+		std::vector<Vertex> vertices;
+
 		void* data;
 
 		::VkResult result;
 
 		//TODO: move this to a separate function
 		bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-		bufferInfo.size = sizeof(m_vertices[0]) * m_vertices.size();
+		bufferInfo.size = 0;
 		bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
 		bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 		bufferInfo.flags = 0;
+
+		for (const Drawable &d: m_drawables)
+		{
+			bufferInfo.size += sizeof(d.GetVertices()[0]) * d.GetVertices().size();
+			for (const Vertex& v: d.GetVertices())
+			{
+				vertices.push_back(v);
+			}
+			//{
+//
+			//}
+			//vertices.insert(vertices.end(), d.GetVertices().begin(), d.GetVertices().end());
+		}
 
 		result = vkCreateBuffer(m_device, &bufferInfo, nullptr, &m_vertexBuffer);
 		RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to create vertex buffer.")
@@ -1185,8 +1236,15 @@ namespace Pepper::Core
 
 		result = ::vkMapMemory(m_device, m_vertexBufferMemory, 0, bufferInfo.size, 0, &data);
 		RUNTIME_ASSERT(result == VK_SUCCESS, "Failed to map vertex buffer memory.")
-		memcpy(data, m_vertices.data(), (size_t) bufferInfo.size);
+		memcpy(data, vertices.data(), (size_t) bufferInfo.size);
 		::vkUnmapMemory(m_device, m_vertexBufferMemory);
+	}
+
+	void VulkanEngine::CleanupVertexBuffer()
+	{
+		::vkDeviceWaitIdle(m_device);
+		::vkDestroyBuffer(m_device, m_vertexBuffer, nullptr);
+		::vkFreeMemory(m_device, m_vertexBufferMemory, nullptr);
 	}
 
 	void VulkanEngine::CreateCommandBuffers()
@@ -1262,7 +1320,7 @@ namespace Pepper::Core
 		CreateGraphicsPipeline();
 		CreateFramebuffers();
 		CreateCommandPool();
-		CreateVertexBuffer();
+		//CreateVertexBuffer();
 		CreateCommandBuffers();
 		CreateSyncObjects();
 	}
@@ -1270,6 +1328,27 @@ namespace Pepper::Core
 	void VulkanEngine::Update()
 	{
 		::glfwPollEvents();
+	}
+
+	void VulkanEngine::Clear(
+			float _r,
+			float _g,
+			float _b,
+			float _a
+	                        )
+	{
+		m_clearColor = { _r, _g, _b, _a };
+	}
+
+	void VulkanEngine::Draw(Drawable &_drawable)
+	{
+		m_drawables.push_back(_drawable);
+	}
+
+	void VulkanEngine::Render()
+	{
+		CleanupVertexBuffer();
+		CreateVertexBuffer();
 		DrawFrame();
 	}
 

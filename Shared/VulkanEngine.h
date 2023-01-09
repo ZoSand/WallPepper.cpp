@@ -55,43 +55,6 @@ namespace Pepper::Core
 			std::vector<::VkPresentModeKHR> presentModes;
 		};
 
-		struct Vertex
-		{
-			//TODO: switch to vec3
-			glm::vec2 pos;
-			glm::vec3 color;
-
-
-			static ::VkVertexInputBindingDescription GetBindingDescription()
-			{
-				::VkVertexInputBindingDescription bindingDescription { };
-
-				bindingDescription.binding = 0;
-				bindingDescription.stride = sizeof(Vertex);
-				bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
-				return bindingDescription;
-			}
-
-			static std::array<::VkVertexInputAttributeDescription, 2> GetAttributeDescriptions()
-			{
-				std::array<::VkVertexInputAttributeDescription, 2> attributeDescriptions { };
-
-				attributeDescriptions[0].binding = 0;
-				attributeDescriptions[0].location = 0;
-				//TODO: switch to vec3
-				attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
-				attributeDescriptions[0].offset = offsetof(Vertex, pos);
-
-				attributeDescriptions[1].binding = 0;
-				attributeDescriptions[1].location = 1;
-				attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-				attributeDescriptions[1].offset = offsetof(Vertex, color);
-
-				return attributeDescriptions;
-			}
-		};
-
 #pragma endregion Structures Definitions
 
 #pragma region Members
@@ -128,12 +91,15 @@ namespace Pepper::Core
 		std::vector<::VkFramebuffer> m_swapChainFramebuffers;
 
 		std::vector<const char*> m_vkValidationLayers;
-
-		std::vector<Vertex> m_vertices;
+		::VkClearValue m_clearColor;
 
 #pragma endregion Members
 
 #pragma region Utils
+
+		static ::VkVertexInputBindingDescription GetVertexBindingDescription();
+
+		static std::array<::VkVertexInputAttributeDescription, 2> GetVertexAttributeDescriptions();
 
 		static VKAPI_ATTR ::VkBool32 VKAPI_CALL DebugCallback(
 				::VkDebugUtilsMessageSeverityFlagBitsEXT _messageSeverity,
@@ -220,7 +186,7 @@ namespace Pepper::Core
 				::VkExtent2D _swapChainExtent,
 				::VkPipeline _graphicsPipeline,
 				::VkBuffer _vertexBuffer,
-				const std::vector<Vertex>& _vertices
+				const std::vector<Vertex> &_vertices
 		                               );
 
 		void DrawFrame();
@@ -311,6 +277,8 @@ namespace Pepper::Core
 
 		void CreateVertexBuffer();
 
+		void CleanupVertexBuffer();
+
 		void CreateCommandBuffers();
 
 		void CreateSyncObjects();
@@ -334,6 +302,17 @@ namespace Pepper::Core
 		         ) override;
 
 		void Update() override;
+
+		void Clear(
+				float _r = 0.0f,
+				float _g = 0.0f,
+				float _b = 0.0f,
+				float _a = 1.0f
+		          ) override;
+
+		void Draw(Drawable &_drawable) override;
+
+		void Render() override;
 
 		void Shutdown() override;
 

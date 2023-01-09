@@ -35,6 +35,17 @@ namespace Pepper::Impl
         void Update();
 
         void Shutdown() final;
+
+	    void Render();
+
+	    void Draw(Core::Drawable& drawable);
+
+	    void Clear(
+			    float _r,
+			    float _g,
+			    float _b,
+			    float _a
+	              );
     };
 }
 

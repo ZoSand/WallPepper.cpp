@@ -6,13 +6,15 @@ set(CMAKE_CXX_STANDARD 20)
 add_library(Shared STATIC
         ConstantDefinitions.h
         library.cpp library.h
-        Window.cpp Window.h EngineBase.h VulkanEngine.cpp VulkanEngine.h)
+        Window.cpp Window.h EngineBase.h VulkanEngine.cpp VulkanEngine.h Drawable.cpp Drawable.h Vertex.cpp Vertex.h)
 
 find_package(Vulkan REQUIRED)
 add_subdirectory(glfw)
 add_subdirectory(glm)
-include_directories(glfw/include)
-include_directories(glm)
+add_subdirectory(TinyOBJLoader)
+
+include_directories(glfw/include glm TinyOBJLoader)
+
 target_link_libraries(Shared glfw ${GLFW_LIBRARIES} glm Vulkan::Vulkan)
 
 target_compile_definitions(Shared PRIVATE WIN_EXPORT)

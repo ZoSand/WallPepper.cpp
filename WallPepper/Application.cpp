@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include <windows.h>
+#include <chrono>
 #include "Application.h"
 
 Pepper::Main::Application::Application()
@@ -22,9 +23,13 @@ void Pepper::Main::Application::Init(Core::EngineBase::EngineType _engineType = 
 
 void Pepper::Main::Application::Run()
 {
+	Core::Drawable d = Core::Drawable();
     while (!m_wp->ShouldClose())
     {
         m_wp->Update();
+		m_wp->Clear(0.0f, 0.0f, 0.0f, 1.0f);
+		m_wp->Draw(d);
+		m_wp->Render();
     }
 }
 
